@@ -1,4 +1,4 @@
-model.exports = (function () {
+module.exports = (function () {
 
     function warning(s) {
         console.log('[WARN] ' + s + '\n')

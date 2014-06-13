@@ -1,0 +1,25 @@
+{
+  "name": "yog-log",
+  "version": "0.0.1",
+  "description": "yog logger",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fex-team/yog-log.git"
+  },
+  "keywords": [
+    "fis",
+    "yog",
+    "express",
+    "kraken-js"
+  ],
+  "author": "fansekey",
+  "license": "BSD",
+  "bugs": {
+    "url": "https://github.com/fex-team/yog-log/issues"
+  },
+  "homepage": "https://github.com/fex-team/yog-log"
+}

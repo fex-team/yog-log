@@ -26,17 +26,25 @@ server日志通过Node中间件实现，做一层简单的封装，暂时不支�
 
 ### web访问日志
 
-ODP默认访问日志格式为：
+ODP默认lighttpd访问日志格式为：
 
 ```
 "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{Cookie}i\" \"%{User-Agent}i\" %D"
 ```
 
-日志按小时生成存放，日志示例如下：
+nginx日志格式为：
+```
+'$remote_addr - $remote_user [$time_local] "$request" '
+'$status $body_bytes_sent "$http_referer" "$http_cookie" "$http_user_agent" ' '$request_time $logid $tracecode'
+```
+
+两种服务器日志格式基本一致，按小时生成存放，日志示例如下：
 
 ```
-127.0.0.1 - - [10/Jun/2014:22:01:34 +0800] "GET /question/580964536.html?fr=ala&word=%E4%B8%80%E5%A4%A9%E9%B2%81%E5%87%A0%E6%AC%A1 HTTP/1.0" 200 68992 "-" "-" "mozila firefox 1.0.7" 0.240 0094312208 00943122082783909642061022
+127.0.0.1 - - [10/Jun/2014:22:01:34 +0800] "GET /question/149487428.html?fr=ala&word=%E6%AC%A7%E7%90%B3%E6%A9%B1%E6%9F%9C&bd_ts=1876010&bd_framework=1&bd_vip=1 HTTP/1.0" 200 164258 "-" "-" "mozila firefox 1.0.7" 0.232 0093913545 00939135452783909642061022
 ```
+
+
 
 访问日志可采用express默认的log[中间件](https://github.com/expressjs/morgan)。支持格式配置，如下所示：
 

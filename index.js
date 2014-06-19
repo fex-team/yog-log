@@ -1,5 +1,4 @@
 var fs = require('fs'),
-    pth = require('path'),
     crypto = require('crypto');
 
 var util = require('./lib/util.js');
@@ -17,14 +16,14 @@ var Logger = function(opts){
         8   : 'TRACE',
         16  : 'DEBUG'
     };
-    this.intLevel = 16;
-
-    this.opts = opts || {
+    
+    this.opts = this.extend({
         'app' : 'test',
+        'intLevel' : 16,
         'IS_ODP' : true,
         'IS_OMP' : 1,
         'data_path' : data_path
-    };
+    },opts);
 
     //保存一次错误及请求的详情信息
     this.params = {};
@@ -32,7 +31,7 @@ var Logger = function(opts){
     //[10/Jun/2014:22:01:35 +0800]
     //应用日志格式
     this.format = {
-        'INFO' : '%h - - [%{%d/%b/%Y:%H:%M:%S +0800}t] "%m %U %H/%{http_version}i" %{status}i %b %{Referer}i %{Cookie}i %{User-Agent}i %D',
+        'INFO' : '%h - - [%{%d/%b/%Y:%H:%M:%S %Z}t] "%m %U %H/%{http_version}i" %{status}i %b %{Referer}i %{Cookie}i %{User-Agent}i %D',
         'WF'   : '%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x]',
         'DEFAULT' : '%L: %t [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M',
         'STD'     :  '%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x]',
@@ -77,6 +76,13 @@ Logger.prototype = {
         this.params['LogId'] = 123132;//test
         this.writeLog(intLevel,option,format);
         
+    },
+
+    extend :  function(destination, source) {
+        for (var property in source) {
+            destination[property] = source[property];
+        }
+        return destination;
     },
 
     getLogFormat : function(level){
@@ -186,7 +192,7 @@ Logger.prototype = {
 
     writeLog : function(intLevel, options , log_format){
         //日志等级高于配置则不输出日志
-        if( intLevel > this.intLevel || !this.levels[intLevel] ){
+        if( intLevel > this.opts['intLevel'] || !this.levels[intLevel] ){
             return false;
         }
 
@@ -416,7 +422,10 @@ Logger.prototype = {
     },
 
     getParams : function(name){
-        return this.params.hasOwnProperty(name) ? this.params[name] : "-";
+        if(this.params.hasOwnProperty(name) && this.params[name]!='undefined'){
+            return this.params[name];
+        }
+        return  "-";
     },
 
     setParams : function(name,value){
@@ -424,7 +433,11 @@ Logger.prototype = {
     },
 
     getCookie : function(name){
-        return "test";
+        var match = this.getParams("COOKIE").match(new RegExp(name + '=([^;]+)'));
+        if (match){
+           return match[1]; 
+        }         
+        return false;
     },
 
 

@@ -10,6 +10,10 @@
     "type": "git",
     "url": "https://github.com/fex-team/yog-log.git"
   },
+  "dependencies": {
+    "mkdirp": "0.5.0",
+    "stack-trace": "0.0.9"
+  },
   "keywords": [
     "fis",
     "yog",

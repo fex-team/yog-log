@@ -31,15 +31,15 @@ var app = express();
 //...此处省去代码
 app.use(Logger(config));//config为读取的日志配置参数
 ```
-3 代码中res对象通过emit方式触发error事件，传递日志参数
+3 代码中res对象通过emit方式触发log事件，传递日志参数
 ```
 //try catch及任何需要统计错误日志的地方
 try{
     //do something
 }catch(e){
-    res.emit('error',{'stack':e,'errno':120,'msg' :'error happened!'},'warning');
-    //or res.emit('error',{'stack':e});//日志等级不写默认为notice
-    //or res.emit('error','error!');//只写字符串不会解析错误堆栈
+    res.emit('log',{'stack':e,'errno':120,'msg' :'error happened!'},'warning');
+    //or res.emit('log',{'stack':e});//日志等级不写默认为notice
+    //or res.emit('log','error!');//只写字符串不会解析错误堆栈
 }
 ```
 
@@ -91,7 +91,7 @@ is_omp		| 0	| 是否开启omp日志，如果不接入omp，建议置为2
 
 注意 ： `is_omp`日志格式不完全兼容
 
-其他配置项参考ODP LOG调研文档，部分指标支持不全，初期请勿修改配置参数
+完整日志格式配置项参考ODP LOG调研文档，部分指标支持不全，初期请勿修改格式配置参数
 
 ## 联系我们
 

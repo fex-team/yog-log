@@ -24,6 +24,7 @@
 ## 快速开始
 
 1 npm全局安装yog-log,`npm install -g yog-log`
+
 2 Node启动脚本中通过中间件方式使用yog-log,并传入日志配置参数。如下DEMO所示：
 ```javascript
 var Logger = require('yog-log');
@@ -31,9 +32,10 @@ var app = express();
 //...此处省去代码
 app.use(Logger(config));//config为读取的日志配置参数
 ```
+
 3 代码中res对象通过emit方式触发log事件，传递日志参数
 ```
-//try catch及任何需要统计错误日志的地方
+//router层使用
 try{
     //do something
 }catch(e){
@@ -41,6 +43,12 @@ try{
     //or res.emit('log',{'stack':e});//日志等级不写默认为notice
     //or res.emit('log','error!');//只写字符串不会解析错误堆栈
 }
+
+//model或其他没有res的地方使用
+var logger = Logger.getLogger();
+logger.log('warning','msg');//or logger.warning('msg');
+
+
 ```
 
 ## 日志配置

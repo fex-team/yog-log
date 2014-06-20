@@ -1,5 +1,6 @@
 var fs = require('fs'),
     path = require('path'),
+    domain = require('domain'),
     crypto = require('crypto');
 
 var util = require('./lib/util.js');
@@ -47,13 +48,16 @@ var Logger = function(opts){
 
 Logger.prototype = {
     fatal : function(){
-
+        //return this.log.call(this, ['FATAL'].concat(arguments));
     },
     notice : function(){
     
     },
     trace : function(){
     
+    },
+    warning : function(){
+
     },
     debug : function(){
         if(this.opts['IS_OMP'] === 0 || this.opts['IS_OMP'] == 1){
@@ -75,8 +79,6 @@ Logger.prototype = {
 
         //解析错误堆栈信息
         this.parseStackInfo(option);      
-        this.params['LogId'] = 123132;//test
-
 
         if(intLevel < 1){
             this.writeLog(intLevel,option,format);
@@ -434,7 +436,7 @@ Logger.prototype = {
                     action.push("this.getParams('errno')");
                     break;
                 case 'l':
-                    action.push("this.getParams('LogID')");
+                    action.push("this.getParams('LogId')");
                     break;
                 case 'u':
                     //TODO 用户ID 用户名
@@ -501,9 +503,8 @@ Logger.prototype = {
 
 
 module.exports = function(config){
-    var config = config || {};
-    var logger = new Logger(config);
     
+    var config = config || {};
    /* if (config.mode === 'production') {
         process.on('uncaughtException', function(e) {
             if (config.mode === 'production') {
@@ -522,8 +523,15 @@ module.exports = function(config){
             logger.parseReqParams(req,res);
             logger.log("info");
         }
-    
 
+        var current = domain.create();   
+        var logger = new Logger(config);
+
+        logger.params['LogId'] = "1234";
+
+        current.add(logger);
+        current.logger = logger; // Add request object to custom property
+        
         //计算请求消耗时间
         /*var start = new Date().getTime() / 1000;
         res.on('header',function(){
@@ -543,8 +551,16 @@ module.exports = function(config){
             logger.log(level,option);
         });
       
-        next();
+        current.run(next);
     }    
 };
 
 module.exports.Logger = Logger;
+
+module.exports.getLogger = function(){
+    try{
+        return process.domain.logger;
+    }catch(e){
+        return null;
+    }
+};

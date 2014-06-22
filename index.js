@@ -24,9 +24,11 @@ var Logger = function(opts){
         'app' : 'unkown',
         'intLevel' : 16,
         'auto_rotate' : 1,
+        'use_sub_dir' : 1,
         'IS_ODP' : true,
         'IS_OMP' : 1,
         'log_path': data_path+"log",
+        'access_log_path' : data_path+"log/access",
         'data_path' : data_path
     },opts);
 
@@ -48,24 +50,22 @@ var Logger = function(opts){
 
 Logger.prototype = {
     fatal : function(){
-        //return this.log.call(this, ['FATAL'].concat(arguments));
+        return this.log.call(this,'FATAL',arguments[0]);
     },
     notice : function(){
-    
+        return this.log.call(this,'NOTICE',arguments[0]);
     },
     trace : function(){
-    
+        return this.log.call(this,'TRACE',arguments[0]);
     },
     warning : function(){
-
+        return this.log.call(this,'WARNING',arguments[0]);
     },
     debug : function(){
-        if(this.opts['IS_OMP'] === 0 || this.opts['IS_OMP'] == 1){
-
-        }
+        return this.log.call(this,'DEBUG',arguments[0]);
     },
     info : function(){
-    
+        return this.log.call(this,'INFO',arguments[0]);
     },
     //level表示日志I等级，obj表示错误消息或者错误选项
     log : function(level,obj){
@@ -75,10 +75,17 @@ Logger.prototype = {
         if(intLevel < 0 || !format){
             return false;
         }   
-        var option = obj || {}; 
-
+        var option =  {}; 
+        if(obj){
+            if(typeof obj == "string"){
+                option['msg'] = obj;
+            }else if(typeof obj == "object"){
+                option = obj;
+            }
+        }
         //解析错误堆栈信息
-        this.parseStackInfo(option);      
+        this.parseStackInfo(option);
+        this.params['LogId'] = this.getLogID();      
 
         if(intLevel < 1){
             this.writeLog(intLevel,option,format);
@@ -175,6 +182,8 @@ Logger.prototype = {
         this.params['HTTP_VERSION'] = req.httpVersionMajor + '.' + req.httpVersionMinor; 
         this.params['STATUS'] = res.statusCode;
         this.params['CONTENT_LENGTH'] = (res._headers || {})['content-length'] || "-";
+
+        this.params['LogId'] = this.getLogID(req);
     },
 
     /**
@@ -190,17 +199,46 @@ Logger.prototype = {
         }
     },
 
+    getLogID : function(req){
+        var logId = 0;
+
+        if(this.params['LogId']){
+            return this.params['LogId'];
+        }
+
+        if(req){
+            if(req.headers['HTTP_X_BD_LOGID']){
+                logId = parseInt(req.headers['HTTP_X_BD_LOGID']);
+            }else if( parseInt(req.query['logid']) > 0 ){
+                logId = parseInt(req.query['logid']);
+            }else if(parseInt(this.getCookie('logid')) > 0 ){
+                logId = parseInt(this.getCookie('logid'));
+            }
+        }
+
+        if(logId == 0){
+            var obj = util.gettimeofday();
+            logId = (((obj['sec']*100000 + obj['usec']/10) & 0x7FFFFFFF) || 0x80000000);
+        }
+        return logId;
+    },
+
     getLogFile : function(intLevel){
         var prefix = this.getLogPrefix();
-        var logFile = "";
+        var logFile = "" ,log_path = "";
         switch(intLevel){
             case '0' :  //访问日志前缀默认access
                 logFile =  this.opts['access_log_file'] || "access"; //访问日志
+                log_path = this.opts['access_log_path'] || this.opts['log_path'] ;
                 break;               
             default : //错误日志为app前缀
+                //是否使用子目录，app区分
+                log_path = this.opts['use_sub_dir'] ? 
+                        (this.opts['log_path'] + "/" + this.opts['app']) : this.opts['app'];
                 logFile = prefix;
         }
-        return this.opts['log_path'] + "/" + logFile;
+
+        return log_path + "/" + logFile;
     },
 
     getLogPath : function(){
@@ -334,7 +372,7 @@ Logger.prototype = {
             _this[func] = template[func];
             return  _this[func](util) + "\n";
         }catch(e){
-            console.log(e.stack);
+            //console.log(e.stack);
             return null;
         }
     },
@@ -451,7 +489,49 @@ Logger.prototype = {
                     break;
                 case 'x':
                     //TODO
-                    action.push("''");
+                    if(param.indexOf("u_")  == 0 ){
+                        param = param.substr(2);
+                    }
+                    switch(param) {
+                        case 'log_level':
+                            action.push("this.getParams('current_level')");
+                            break;
+                        case 'line':
+                            action.push("this.getParams('LineNumber')");
+                            break;
+                        case 'function':
+                            action.push("this.getParams('FunctionName')");
+                            break;
+                        case 'err_no':
+                            action.push("this.getParams('errno')");
+                            break;
+                        case 'err_msg':
+                            action.push("this.getParams('error_msg')");
+                            break;
+                        case 'log_id':
+                            action.push("this.getParams('LogId')");
+                            break;
+                        case 'app':
+                            action.push("this.getLogPrefix()");
+                            break;
+                        /*case 'function_param':
+                            $action[] = 'Bd_Log::flattenArgs(Bd_Log::$current_instance->current_function_param)';
+                            break;*/
+                        /*case 'argv':
+                            $action[] = '(isset($GLOBALS["argv"])? Bd_Log::flattenArgs($GLOBALS["argv"]) : \'\')';
+                            break;*/
+                        case 'pid':
+                            action.push("this.getParams('pid')");
+                            break;
+                        case 'encoded_str_array':
+                            action.push("this.getParams('encoded_str_array')");
+                            break;
+                        case 'cookie':
+                            action.push("this.getParams('cookie')");
+                            break;
+                        default:
+                            action.push("''");
+                    }
                     break;
                 case '%':
                     action.push("'%'");
@@ -526,8 +606,6 @@ module.exports = function(config){
 
         var current = domain.create();   
         var logger = new Logger(config);
-
-        logger.params['LogId'] = "1234";
 
         current.add(logger);
         current.logger = logger; // Add request object to custom property

@@ -37,7 +37,7 @@ var Logger = function(opts){
     this.opts = this.extend({
         'app' : 'unkown',
         'intLevel' : 16,
-        'auto_rotate' : 1,
+        'auto_rotate' : 0,
         'use_sub_dir' : 1,
         'IS_ODP' : true,
         'IS_OMP' : 0,
@@ -255,7 +255,7 @@ Logger.prototype = {
                 logFile = prefix;
         }
 
-        return log_path + "/" + logFile;
+        return log_path + "/" + logFile + ".log";
     },
 
     getLogPath : function(){

@@ -7,7 +7,7 @@ var util = require('./lib/util.js');
 var stackTrace = require('stack-trace');
 var mkdirp = require('mkdirp');
 
-var data_path = __dirname + "/";
+var data_path = __dirname + "/"; //模板地址默认在模块里
 var log_path  = __dirname + "/log";
 
 var Logger = function(opts){
@@ -25,8 +25,13 @@ var Logger = function(opts){
         16  : 'DEBUG'
     };
 
+    //模板文件地址，可以不填
     if(opts['data_path']){
-        data_path  = opts['data_path']
+        data_path  = opts['data_path'];
+    }
+    //用户只需要填写log_path配置
+    if(opts['log_path']){
+        log_path  = opts['log_path'];
     }
     
     this.opts = this.extend({
@@ -36,7 +41,7 @@ var Logger = function(opts){
         'use_sub_dir' : 1,
         'IS_ODP' : true,
         'IS_OMP' : 1,
-        'log_path': data_path + "log",
+        'log_path': log_path,
         'access_log_path' : log_path + "/access",
         'access_error_log_path' : log_path + "/access",
         'data_path' : data_path + "data"
@@ -50,8 +55,8 @@ var Logger = function(opts){
     this.format = {
         'ACCESS' : '%h - - [%{%d/%b/%Y:%H:%M:%S %Z}t] "%m %U %H/%{http_version}i" %{status}i %b %{Referer}i %{Cookie}i %{User-Agent}i %D',
         'ACCESS_ERROR' : '%h - - [%{%d/%b/%Y:%H:%M:%S %Z}t] "%m %U %H/%{http_version}i" %{status}i %b %{Referer}i %{Cookie}i %{User-Agent}i %D',
-        'WF'   : '%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x]',
-        'DEFAULT' : '%L: %t [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M',
+        'WF'   : this.opts['format_wf'] ||  '%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x]',
+        'DEFAULT' : this.opts['format'] || '%L: %t [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M',
         'STD'     :  '%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x]',
         'STD_DETAIL' : '%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x cookie=%{u_cookie}x]'
     };

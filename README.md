@@ -39,7 +39,7 @@ app.use(Logger(config));//config为读取的日志配置参数
 try{
     //do something
 }catch(e){
-    res.emit('log',{'stack':e,'errno':120,'msg' :'error happened!'},'warning');
+    res.emit('log',{'stack':e,'errno':120,'msg' :'error happened!'},'warning'); //推荐
     //or res.emit('log',{'stack':e});//日志等级不写默认为notice
     //or res.emit('log','error!');//只写字符串不会解析错误堆栈
 }
@@ -48,8 +48,8 @@ try{
 var logger = Logger.getLogger();
 logger.log('warning','msg');//or logger.warning('msg');
 
-
 ```
+
 
 ## 日志配置
 

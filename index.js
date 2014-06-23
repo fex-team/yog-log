@@ -16,7 +16,6 @@ var Logger = function(opts){
         //访问日志 编号？
         0   : 'ACCESS',
         3   : 'ACCESS_ERROR',
-
         //应用日志等级 ODP格式
         1   : 'FATAL',
         2   : 'WARNING',
@@ -26,11 +25,12 @@ var Logger = function(opts){
     };
 
     //模板文件地址，可以不填
-    if(opts['data_path']){
+    if(opts &&  opts['data_path']){
         data_path  = opts['data_path'];
     }
+
     //用户只需要填写log_path配置
-    if(opts['log_path']){
+    if(opts &&  opts['log_path']){
         log_path  = opts['log_path'];
     }
     

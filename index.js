@@ -218,7 +218,7 @@ Logger.prototype = {
 
         if(logId == 0){
             var obj = util.gettimeofday();
-            logId = (((obj['sec']*100000 + obj['usec']/10) & 0x7FFFFFFF) || 0x80000000);
+            logId = (((obj['sec']*100000 + obj['usec']/10) & 0x7FFFFFFF) | 0x80000000);
         }
         return logId;
     },
@@ -636,9 +636,9 @@ module.exports = function(config){
 module.exports.Logger = Logger;
 
 module.exports.getLogger = function(){
-    try{
+    if(process.domain && process.domain.logger){
         return process.domain.logger;
-    }catch(e){
-        return null;
-    }
+    }else{
+        return new Logger();
+    }       
 };

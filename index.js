@@ -40,7 +40,7 @@ var Logger = function(opts){
         'auto_rotate' : 1,
         'use_sub_dir' : 1,
         'IS_ODP' : true,
-        'IS_OMP' : 1,
+        'IS_OMP' : 0,
         'log_path': log_path,
         'access_log_path' : log_path + "/access",
         'access_error_log_path' : log_path + "/access",

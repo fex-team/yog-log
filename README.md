@@ -45,11 +45,31 @@ try{
 }
 
 //model或其他没有res的地方使用
-var logger = Logger.getLogger();
+var logger = Logger.getLogger(config); //不传递config走默认配置，配置说明见日志接口
 logger.log('warning','msg');//or logger.warning('msg');
 
 ```
 
+## 接口文档
+
+### 应用日志等级
+
+应用日志等级分为 `FATAL` 、`WARNING `、`NOTICE` 、 `TRACE`、`DEBUG`几个，可以配置线上日志等级来确定统计哪些日志。默认为16，即统计所有日志(具体可参考下面日志默认配置说明)。
+
+### 日志统计接口
+
+针对每个应用日志等级都有相应的接口。如fatal日志可以通过 `logger.log('fatal',{'stack':e,'msg':'error!'})`的方式统计；也可以通过`logger.fatal({'stack':e,'msg':'error!'})` 方式统计。其他几个等级一样。
+
+如果是访问日志，对应的等级名称为`access`(正常访问)及`access_error`(异常访问404等)，使用方式跟应用日志一样。默认通过中间件方式使用yog-log时将统计访问日志和301、404错误日志。错误日志默认单独存储。
+
+**log(level,obj) 方法参数 ：**
+
+ - level ： 日志等级，同上
+ - obj： string或者object格式。如果是string，认为是错误消息。如果是object，请使用正确格式。正确格式为{'stack':e,'msg':'msg','errno':'010'}，分别代表错误堆栈、错误消息、错误码。错误消息如果不填将使用错误堆栈的消息。
+
+### 自定义配置
+
+统计模块默认以中间件的形式且只有请求过来才会进行初始化，初始化后可以在model等地方直接获取到此实例。如果未进行初始化(没有请求)就想使用日志统计，请传递日志参数。日志配置项见下所示。
 
 ## 日志配置
 

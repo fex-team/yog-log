@@ -178,8 +178,8 @@ Logger.prototype = {
         this.params['CLIENT_IP'] = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.headers['x-real-ip'];
         this.params['REFERER'] = req.headers['referer'];
         this.params['COOKIE'] = req.headers['cookie'];
-        this.params['USER_AGENT'] = req.headers['user-agent'];
-        this.params['SERVER_ADDR'] = req.headers.host;
+        this.params['USER_AGENT'] = req.headers['user-agent'] ;
+        this.params['SERVER_ADDR'] = req.headers.host ;
         this.params['SERVER_PROTOCOL'] = String(req.protocol).toUpperCase();
         this.params['REQUEST_METHOD'] = req.method || "";
         this.params['SERVER_PORT'] = req.app.settings ? req.app.settings.port : "";
@@ -585,7 +585,7 @@ Logger.prototype = {
     },
 
     getParams : function(name){
-        if(this.params.hasOwnProperty(name) && this.params[name]!='undefined'){
+        if(this.params.hasOwnProperty(name) && this.params[name]!=undefined){
             return this.params[name];
         }
         return  "-";
@@ -667,10 +667,10 @@ module.exports = function(config){
 
 module.exports.Logger = Logger;
 
-module.exports.getLogger = function(){
+module.exports.getLogger = function(config){
     if(process.domain && process.domain.logger){
         return process.domain.logger;
     }else{
-        return new Logger();
+        return new Logger(config);
     }       
 };

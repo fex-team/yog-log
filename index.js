@@ -97,8 +97,7 @@ Logger.prototype = {
             }
         }
         //解析错误堆栈信息
-        this.parseStackInfo(option);
-        this.params['LogId'] = this.getLogID();      
+        this.parseStackInfo(option);    
 
         if(intLevel == 0 || intLevel == 3){//访问日志        
             this.writeLog(intLevel,option,format);
@@ -191,9 +190,6 @@ Logger.prototype = {
         this.params['STATUS'] = res._header ? res.statusCode : null;
         this.params['CONTENT_LENGTH'] = (res._headers || {})['content-length'] || "-";
 
-        this.params['LogId'] = this.getLogID(req);
-
-        
         this.params['pid'] = process.pid;
     },
 
@@ -635,6 +631,9 @@ module.exports = function(config){
 
         var current = domain.create();   
         var logger = new Logger(config);
+        
+        //只在请求过来的时候才设置LogId
+        logger.params['LogId'] = logger.getLogID(req);
 
         current.add(logger);
         current.logger = logger; // Add request object to custom property

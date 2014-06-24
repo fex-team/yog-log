@@ -37,7 +37,7 @@ var Logger = function(opts){
     this.opts = this.extend({
         'app' : 'unkown',
         'intLevel' : 16,
-        'auto_rotate' : 0,
+        'auto_rotate' : 1,
         'use_sub_dir' : 1,
         'IS_ODP' : true,
         'IS_OMP' : 0,
@@ -251,7 +251,7 @@ Logger.prototype = {
             default : //错误日志为app前缀
                 //是否使用子目录，app区分
                 log_path = this.opts['use_sub_dir'] ? 
-                        (this.opts['log_path'] + "/" + this.opts['app']) : this.opts['app'];
+                        (this.opts['log_path'] + "/" + this.opts['app']) : this.opts['log_path'] ;
                 logFile = prefix;
         }
 
@@ -596,7 +596,7 @@ Logger.prototype = {
     },
 
     getCookie : function(name){
-        var match = this.getParams("COOKIE").match(new RegExp(name + '=([^;]+)'));
+        var match = String(this.getParams("COOKIE")).match(new RegExp(name + '=([^;]+)'));
         if (match){
            return match[1]; 
         }         

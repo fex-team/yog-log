@@ -99,7 +99,7 @@ Logger.prototype = {
         //解析错误堆栈信息
         this.parseStackInfo(option);    
 
-        if(intLevel == 0 || intLevel == 3){//访问日志        
+        if(intLevel == 0 || intLevel == 3){//访问日志     
             this.writeLog(intLevel,option,format);
         }else{
             //IS_OMP等于0打印两种格式日志，等于1打印STD日志，等于2打印WF/Default日志
@@ -174,6 +174,9 @@ Logger.prototype = {
 
     //初始化请求相关的参数
     parseReqParams : function(req,res){
+        if(!req || !req.headers || !res){
+            return false;
+        }
         this.params['CLIENT_IP'] = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.headers['x-real-ip'];
         this.params['REFERER'] = req.headers['referer'];
         this.params['COOKIE'] = req.headers['cookie'];
@@ -226,7 +229,7 @@ Logger.prototype = {
 
         if(logId == 0){
             var obj = util.gettimeofday();
-            logId = (((obj['sec']*100000 + obj['usec']/10) & 0x7FFFFFFF) || 0x80000000); //TODO此处使用或运算有问题，改成||
+            logId = ((obj['sec']*100000 + obj['usec']/10 + parseInt(Math.random()*100)  ) & 0x7FFFFFFF );
         }
         return logId;
     },
@@ -284,7 +287,6 @@ Logger.prototype = {
         if( intLevel > this.opts['intLevel'] || !this.levels[intLevel] ){
             return false;
         }
-
         this.params['current_level'] = this.levels[intLevel];
 
         //日志文件名称
@@ -302,23 +304,24 @@ Logger.prototype = {
             logFile += "." + util.strftime(new Date(),'%Y%m%d%H');
         }
 
-        var format = log_format || this.getFormat(intLevel);
+        var format = log_format || this.format['DEFAULT'];
         var str = this.getLogString(format);
         if(!str){
             return false;
         }
         var pathname = path.dirname(logFile);
         fs.exists(pathname, function(exists) {
-            if (!exists) {
-                return mkdirp(pathname, function(err) {
-                    if (err) {
-                        //return mail('日志 writer失败');
+            if (!exists) {               
+                mkdirp(pathname, function (err) {
+                    if (err){
+                        //return mail('日志初始化文件夹失败');
+                    }else{
+                        return fs.appendFile(logFile, str, function(err) {
+                            if (err) {
+                                //return mail('日志append失败');
+                            }
+                        });
                     }
-                    return fs.appendFile(logFile, str, function(err) {
-                        if (err) {
-                            //return mail('日志append失败');
-                        }
-                    });
                 });
             } else {
                 return fs.appendFile(logFile, str, function(err) {
@@ -330,14 +333,6 @@ Logger.prototype = {
         });
     },
 
-    //获取不同级别日志的格式
-    getFormat  : function(intlevel){
-        var format = this.format['DEFAULT'];
-        if(this.getLogLevelInt('WARNING') == intLevel || this.getLogLevelInt('FATAL') == intLevel){
-            format = this.opts['format_wf'];
-        }
-        return format;
-    },
 
     //获取字符串标识对应的日志等级，没有返回-1
     getLogLevelInt : function(level){
@@ -355,6 +350,9 @@ Logger.prototype = {
      * @return {[type]} [description]
      */
     getLogString : function(format){
+        if(!format){
+            return false;
+        }
         var _this = this;
         var md5Str = _this.md5(format);
         var func = "node_log_" + md5Str;
@@ -449,7 +447,7 @@ Logger.prototype = {
                     if(param == ''){
                         action.push("this.getParams('HTTP_COOKIE')");
                     }else{
-                        action.push("this.getCookie(' " + param + "')");                    
+                        action.push("this.getCookie('" + param + "')");                    
                     }
                     break;
                 case 'D':
@@ -592,6 +590,7 @@ Logger.prototype = {
     },
 
     getCookie : function(name){
+        var name = String(name).replace(/(^\s*)|(\s*$)/g, "");  
         var match = String(this.getParams("COOKIE")).match(new RegExp(name + '=([^;]+)'));
         if (match){
            return match[1]; 

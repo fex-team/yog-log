@@ -14,7 +14,7 @@ var util   = require("../lib/util.js");
 var fs     = require("fs");
 var path   = require("path");
 
-
+//判断元素是否在数组中
 function in_array(array,e) { 
     for(i=0;i<array.length;i++)
     {

@@ -97,7 +97,11 @@ Logger.prototype = {
             }
         }
         //解析错误堆栈信息
-        this.parseStackInfo(option);    
+        this.parseStackInfo(option);  
+        //解析自定义字段，存放在对应ODP的 encoded_str_array中
+        if(option['custom']){
+            this.parseCustomLog(option['custom']);
+        }  
 
         if(intLevel == 0 || intLevel == 3){//访问日志     
             this.writeLog(intLevel,option,format);
@@ -170,6 +174,22 @@ Logger.prototype = {
             }
         }
         
+    },
+
+    //解析自定义字段，'custom'字段
+    parseCustomLog : function(obj){
+        if("object" != typeof(obj)){
+            return false;
+        }
+        var items = [];
+        for(var key in obj){
+            if(obj.hasOwnProperty(key)){
+                items.push(escape(key) + "=" + escape(obj[key]));
+            }
+        }
+        if(items.length > 0){
+            this.params['encoded_str_array'] = items.join(" ");
+        }
     },
 
     //初始化请求相关的参数

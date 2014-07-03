@@ -2,7 +2,7 @@
 ---
 ## 这是什么
 
-基于Node.js的日志统计方案，兼容ODP日志格式与配置。关于ODP的日志方案调研可查看[此文档](./doc/odp-log.md).
+这是yog框架的log统计模块，支持中间件或者单独使用等方式，兼容ODP日志格式与配置。关于ODP的日志方案调研可查看[此文档](./doc/odp-log.md).
 
 统计日志类型包括：
 
@@ -17,109 +17,205 @@
  - 可配置每个app是否使用独立的子目录存放自身日志，例如demo/demo.log。
  - 可配置每个app是否按小时切分日志。
  - 可配置每个app的日志级别。
- - 对于不属于任何app的php程序，日志名为unknown-app.log。
+ - 对于不属于任何app的node.js程序，日志名为unknown.log。
 
-应用日志包括主动触发的统计以及未捕获的错误。
 
 ## 快速开始
 
-1 npm全局安装yog-log,`npm install -g yog-log`
+1 在yog的config.json中添加此配置
 
-2 Node启动脚本中通过中间件方式使用yog-log,并传入日志配置参数。如下DEMO所示：
 ```javascript
-var Logger = require('yog-log');
-var app = express();
-//...此处省去代码
-app.use(Logger(config));//config为读取的日志配置参数
+  "yogLogger": {
+            "enabled": true,
+            "priority": 50,
+            "module": {
+                "name": "yog-log",
+                "arguments": [
+                    {
+                        "level" : 16, //线上一般填4，参见配置项说明
+                        "app": "app_name", //app名称，产品线或项目名称等
+                        "log_path": "path:./data/log"//日志存放地址
+                    }
+             ]
+      }
+ }
 ```
 
-3 代码中res对象通过emit方式触发log事件，传递日志参数
+填写此配置之后yog-log就开始统计访问日志。
+
+2 调用接口统计应用日志
+
+**router层统计日志**
+
+router层推荐使用emit方式触发log事件，避免在每个文件中都require yog-log
+
 ```
-//router层使用
 try{
     //do something
 }catch(e){
-    res.emit('log',{'stack':e,'errno':120,'msg' :'error happened!'},'warning'); //推荐
+    res.emit('log',{'stack':e,'errno':120,'msg' :'error happened!'}, 'warning'); //推荐方式
     //or res.emit('log',{'stack':e});//日志等级不写默认为notice
     //or res.emit('log','error!');//只写字符串不会解析错误堆栈
 }
+```
 
-//model或其他没有res的地方使用
-var logger = Logger.getLogger(config); //不传递config走默认配置，配置说明见日志接口
+**model等没有res的地方**
+
+使用`getLogger`方法获取到日志模块实例，然后调用接口统计日志。
+
+```javascript
+var YLogger = require('yog-log');
+var logger = YLogger.getLogger(); //默认通过domain获取，单独使用请传递config
 logger.log('warning','msg');//or logger.warning('msg');
 
 ```
 
-## 接口文档
 
-### 应用日志等级
+## 日志初始化配置项
 
-应用日志等级分为 `FATAL` 、`WARNING `、`NOTICE` 、 `TRACE`、`DEBUG`几个，可以配置线上日志等级来确定统计哪些日志。默认为16，即统计所有日志(具体可参考下面日志默认配置说明)。
-
-### 日志统计接口
-
-针对每个应用日志等级都有相应的接口。如fatal日志可以通过 `logger.log('fatal',{'stack':e,'msg':'error!'})`的方式统计；也可以通过`logger.fatal({'stack':e,'msg':'error!'})` 方式统计。其他几个等级一样。
-
-如果是访问日志，对应的等级名称为`access`(正常访问)及`access_error`(异常访问404等)，使用方式跟应用日志一样。默认通过中间件方式使用yog-log时将统计访问日志和301、404错误日志。错误日志默认单独存储。
-
-**log(level,obj) 方法参数 ：**
-
- - level ： 日志等级，同上
- - obj： string或者object格式。如果是string，认为是错误消息。如果是object，请使用正确格式。正确格式为{'stack':e,'msg':'msg','errno':'010'}，分别代表错误堆栈、错误消息、错误码。错误消息如果不填将使用错误堆栈的消息。
-
-### 自定义配置
-
-统计模块默认以中间件的形式且只有请求过来才会进行初始化，初始化后可以在model等地方直接获取到此实例。如果未进行初始化(没有请求)就想使用日志统计，请传递日志参数。日志配置项见下所示。
-
-## 日志配置
-
-**默认配置**
-
-默认配置与ODP日志保持一致，如下所示：
-
-
-```
-    # 日志级别
-	#  1：打印FATAL
-	#  2：打印FATAL和WARNING
-	#  4：打印FATAL、WARNING、NOTICE（线上程序正常运行时的配置）
-	#  8：打印FATAL、WARNING、NOTICE、TRACE（线上程序异常时使用该配置）
-	# 16：打印FATAL、WARNING、NOTICE、TRACE、DEBUG（测试环境配置）
-	level: 16
-
-	# 是否按小时自动分日志，设置为1时，日志被打在some-app.log.2011010101
-	auto_rotate: 1
-
-	# 日志文件路径是否增加一个基于app名称的子目录，例如：log/some-app/some-app.log
-	# 该配置对于unknown-app同样生效
-	use_sub_dir: 1
-
-	format: format: %L: %t [%f:%N] errno[%E] logId[%l] uri[%U] refer[%{referer}i] cookie[%{cookie}i] %S %M
-
-	# 提供绝对路径，日志存放的根目录，只有非odp环境下有效
-	log_path: /home/user/odp/log/
-	# 提供绝对路径，日志格式数据存放的根目录，只有非odp环境下有效
-	data_path: /home/user/odp/data/
-	# 是否开启Omp日志, 0默认值（两个日志文件都开启），1，只打印omp的new日志，2只打印老日志
-	is_omp: 0
-```
-
-**配置项说明**
+配置项均有默认值，理论上不需要配置也能工作。推荐设置配置有：`level`、`app`、`log_path` 三项。
 
 配置项		| 默认值	| 说明
 --------------- | ----- | ---------------
-format		| 见下	| 参照format string格式
-format_wf	| 见下	| 参照format string格式
-level		| 16	| log日志级别
+app         | unknown    | app名称，推荐填写
+format		| 见下	| 默认应用日志格式
+format_wf	| 见下	| 默认的应用日志warning及fatal日志格式
+level		| 16	| log日志级别，高于此级别的日志不会输出
 auto_rotate	| 1	| 是否自动切分
-use_sub_dir	| 1	| 日志是否在二级目录打印，目录名为 `${APP_NAME}`
-log_path	| 无	| 日志存放目录
-data_path	| 无	| 格式数据存放的目录
+use_sub_dir	| 1	| 日志是否在二级目录打印，目录名为 `APP_NAME`
+log_path	| 插件安装地址/log	| 日志存放目录，注意需要设置
+data_path	| 插件安装地址/data	| 格式数据存放的目录，可不用设置
 is_omp		| 0	| 是否开启omp日志，如果不接入omp，建议置为2
 
-注意 ： `is_omp`日志格式不完全兼容
+默认`format` : %L: %t [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M
 
-完整日志格式配置项参考ODP LOG调研文档，部分指标支持不全，初期请勿修改格式配置参数
+默认的`format_wf `：%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x] 
+
+## 应用日志等级
+
+|    日志等级   |   数据编号  |    统计说明  |
+|   ----      |     ----          |      ----          |
+|  FATAL      |   1        | 打印FATAL |
+| WARNING     |     2       | 打印FATAL和WARNING |
+| NOTICE      |     4      | 打印FATAL、WARNING、NOTICE（线上程序正常运行时的配置） |
+| TRACE       |    8      | 打印FATAL、WARNING、NOTICE、TRACE（线上程序异常时使用该配置）|
+| DEBUG       |   16       | 打印FATAL、WARNING、NOTICE、TRACE、DEBUG（测试环境配 | 
+
+## response.emit(name,obj,level)
+
+在router层使用emit方式可以避免每个文件都引入logger并获取实例。参数说明：
+ 
+  - name ：日志事件名称，固定为'log'
+  - obj： string或者object格式。如果是string，认为是错误消息。如果是object，请认为是详细信息。正确格式为{'stack':e,'msg':'msg','errno':'010'}，分别代表`错误堆栈`、`错误消息`、`错误码`。错误消息如果不填将使用错误堆栈的消息。
+  - level ： 日志等级字符串，见上。不区分大小写
+
+如下所示：
+
+```javascript
+res.emit('log',{'stack':e,'errno':120,'msg' :'error happened!'},'warning'); 
+```
+
+## getLogger(config)
+
+当框架接收请求时，yog-log会新建一个实例，并保存到domain中，确保单次请求流程中调用的getLogger获取到的是同一个实例。
+
+如果单独使用log不经过请求, getLogger会新建一个实例，此时应当传递config配置参数。
+
+## log(level,obj)
+
+提供统一的log方法打印日志。参数说明同response.emit。另外针对各个应用日志等级提供了相对应的方法。
+
+请确保使用快捷方法时名称准确，否则程序将报错。
+
+ - fatal  :  logger.fata(obj)
+ - warning : logger.warning(obj)
+ - notice : logger.notice(obj)
+ - trace : logger.trace(obj)
+ - debug : logger.debug(obj)
+
+`注意` ： logger为通过getLogger获取到的日志模块实例 。
+
+**自定义错误消息**
+
+如果想在日志中填写自定义的日志字段用于追查错误，请在obj中加入custom对象，然后按照键值对应放在custom中。如下所示：
+
+```
+ //router层
+ res.emit('log',{
+   'stack':e, //错误堆栈
+   'errno':120,  //错误码
+   'msg' :'error happened!',  //错误消息
+   'custom':{'key1' :'value1','key2':'value2'} //自定义消息
+ }); 
+
+ //其他地方
+ logger.log('warning', {
+   'stack':e, //错误堆栈
+   'errno':120,  //错误码
+   'msg' :'error happened!',  //错误消息
+   'custom':{'key1' :'value1','key2':'value2'} //自定义消息
+ });
+ 
+```
+`注意`custom字段默认只会在`warning`和`fatal`日志中展现
+
+生成的错误日志将会类似于下面的格式。其中可以看到custom字段已自动添加到日志中：
+
+```
+WARNING: 07-03 16:44:55 yd * - [logid=868855481 filename=D:\fis\test\models\doc.js lineno=25 errno=120 key1=value1 key2=value2 errmsg=error%20happened!]
+```
+
+## Debug支持
+
+###开发时debug
+
+TODO
+
+### 线上debug
+
+TODO
+
+## 日志格式配置
+
+yog-log兼容ODP支持灵活的日志格式配置，以满足不同系统对日志的格式要求。如接入OMP时warning日志格式配置：
+
+```
+%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x]
+```
+
+除非特殊情况，不建议随意修改日志格式配置。
+
+格式配置方法如下：
+
+字段	| 描述
+------- | ----------------
+%%	| 百分比字符串
+%h	| name or address of remote-host
+%t	| 时间戳，支持自定义格式如`%{%d/%b/%Y:%H:%M:%S %Z}t`
+%i	| HTTP-header字段
+%a	| 客户端IP
+%A	| server address
+%C	| 单个或全部cookie
+%D	| 请求消耗时间/ms
+%f	| 物理文件名称
+%H	| 请求协议
+%m	| 请求方法
+%p	| 服务端端口
+%q	| 请求query
+%U	| 请求URL
+%v	| HOSTNAME
+%V	| HTTP_HOST
+%L	| 当前日志等级
+%N	| 错误发生行数
+%E	| 错误码
+%l	| LogID
+%M	| 错误消息
+%x	| 内置的自定义数据，有pid、cookie、encoded_str_array等
+
+
+## 测试说明
+
+单元测试说明详见[此文档](./test/README.md)
 
 ## 联系我们
 

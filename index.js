@@ -3,9 +3,10 @@ var fs = require('fs'),
     domain = require('domain'),
     crypto = require('crypto');
 
-var util = require('./lib/util.js');
-var stackTrace = require('stack-trace');
-var mkdirp = require('mkdirp');
+var util = require('./lib/util.js'),
+    stackTrace = require('stack-trace'),
+    colors = require('colors'),
+    mkdirp = require('mkdirp');
 
 var data_path = __dirname + "/"; //模板地址默认在模块里
 var log_path  = __dirname + "/log";
@@ -24,6 +25,15 @@ var Logger = function(opts){
         16  : 'DEBUG'
     };
 
+    //debug模式下应用日志等级对应的颜色
+    this.colors = {
+        1 : 'red',
+        2 : 'yellow',
+        4 : 'grey',
+        8 : 'cyan',
+        16 : 'blue'
+    };
+
     //模板文件地址，可以不填
     if(opts &&  opts['data_path']){
         data_path  = opts['data_path'];
@@ -36,6 +46,7 @@ var Logger = function(opts){
     
     this.opts = this.extend({
         'app' : 'unkown',
+        'debug' : 0,
         'intLevel' : 16,
         'auto_rotate' : 1,
         'use_sub_dir' : 1,
@@ -156,7 +167,12 @@ Logger.prototype = {
     parseStackInfo : function(option){
         this.params['errno'] = option['errno'] || 0; //错误号
         this.params['error_msg'] = escape(option['msg'] || ""); //自定义错误信息
-
+        this.params['TypeName'] = "";
+        this.params['FunctionName'] = "";
+        this.params['MethodName'] = "";
+        this.params['FileName'] = "";
+        this.params['LineNumber'] = "";
+        this.params['isNative'] = "";
         if(option['stack'] ){
             try{
                 if(!option['msg']){
@@ -307,6 +323,7 @@ Logger.prototype = {
         if( intLevel > this.opts['intLevel'] || !this.levels[intLevel] ){
             return false;
         }
+
         this.params['current_level'] = this.levels[intLevel];
 
         //日志文件名称
@@ -329,6 +346,14 @@ Logger.prototype = {
         if(!str){
             return false;
         }
+
+        //debug模式，console.log输出颜色标记的日志
+        if(this.opts['debug'] && this.colors[intLevel]){
+            var color = this.colors[intLevel];
+            var _str = unescape(str);
+            console.log(_str[color]);
+        }
+
         var pathname = path.dirname(logFile);
         fs.exists(pathname, function(exists) {
             if (!exists) {               
@@ -520,7 +545,7 @@ Logger.prototype = {
                     break;
                 case 'u':
                     //TODO 用户ID 用户名
-                    action.push("''");
+                    action.push("this.getParams('user')");
                     break;
                 case 'S':
                     //TODO
@@ -599,7 +624,7 @@ Logger.prototype = {
     },
 
     getParams : function(name){
-        if(this.params.hasOwnProperty(name) && this.params[name]!=undefined){
+        if(this.params.hasOwnProperty(name) && this.params[name]!=undefined && this.params[name]!=""){
             return this.params[name];
         }
         return  "-";
@@ -678,6 +703,11 @@ module.exports = function(config){
             logger.parseReqParams(req,res);
             logger.log(level,option);
         });
+
+        //只要url设置了_node_debug参数，则开启debug模式，console.log输出日志
+        if(req.query && req.query._node_debug){
+            logger.opts['debug'] = 1;
+        }
       
         current.run(next);
     }    

@@ -22,7 +22,7 @@
 
 ## 快速开始
 
-1 在yog的config.json中添加此配置
+### 1 在yog的config.json中添加此配置
 
 ```javascript
   "yogLogger": {
@@ -43,7 +43,7 @@
 
 填写此配置之后yog-log就开始统计访问日志。
 
-2 调用接口统计应用日志
+### 2 调用接口统计应用日志
 
 **router层统计日志**
 
@@ -86,10 +86,17 @@ use_sub_dir	| 1	| 日志是否在二级目录打印，目录名为 `APP_NAME`
 log_path	| 插件安装地址/log	| 日志存放目录，注意需要设置
 data_path	| 插件安装地址/data	| 格式数据存放的目录，可不用设置
 is_omp		| 0	| 是否开启omp日志，如果不接入omp，建议置为2
+debug     | 0 | 是否开启omp日志，如果不接入omp，建议置为2
 
-默认`format` : %L: %t [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M
+```
 
-默认的`format_wf `：%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x] 
+默认`format`:
+%L: %t [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M
+
+默认的`format_wf `：
+%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x] 
+
+```
 
 ## 应用日志等级
 
@@ -103,11 +110,11 @@ is_omp		| 0	| 是否开启omp日志，如果不接入omp，建议置为2
 
 ## response.emit(name,obj,level)
 
-在router层使用emit方式可以避免每个文件都引入logger并获取实例。参数说明：
+在router层使用emit方式可以避免每个文件都引入logger和获取实例。参数说明：
  
   - name ：日志事件名称，固定为'log'
   - obj： string或者object格式。如果是string，认为是错误消息。如果是object，请认为是详细信息。正确格式为{'stack':e,'msg':'msg','errno':'010'}，分别代表`错误堆栈`、`错误消息`、`错误码`。错误消息如果不填将使用错误堆栈的消息。
-  - level ： 日志等级字符串，见上。不区分大小写
+  - level ： 日志等级字符串，见上。不区分大小写，不写默认为notice
 
 如下所示：
 
@@ -127,7 +134,7 @@ res.emit('log',{'stack':e,'errno':120,'msg' :'error happened!'},'warning');
 
 请确保使用快捷方法时名称准确，否则程序将报错。
 
- - fatal  :  logger.fata(obj)
+ - fatal   :  logger.fata(obj)
  - warning : logger.warning(obj)
  - notice : logger.notice(obj)
  - trace : logger.trace(obj)
@@ -167,13 +174,11 @@ WARNING: 07-03 16:44:55 yd * - [logid=868855481 filename=D:\fis\test\models\doc.
 
 ## Debug支持
 
-###开发时debug
+处于debug模式下Log将在控制台输出错误日志，并根据错误日志类型显示不同的颜色，方便开发人员调试(debug模式下依旧会写日志到文件)。有两种方法开启debug模式：
 
-TODO
+ - **开发时** ：yog的config.json的yogLogger `arguments`添加参数debug : 1 即开启debug模式
+ - **线上** ： 无论在线上还是线下都可以在url中添加query参数`_node_debug=1` 开启debug模式
 
-### 线上debug
-
-TODO
 
 ## 日志格式配置
 

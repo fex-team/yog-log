@@ -282,7 +282,7 @@ describe('LogFomatter', function(){
     it('default app log format ',function(){
         //默认配置去除时间
         var format = '%L: [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M';     
-        var str ="NOTICE: [-:-] errno[123] logId[-] uri[/test/test2] user[] refer[http://www.baidu.com] cookie[c1=cookie1;c2=cookie2]  error\n";
+        var str ="NOTICE: [-:-] errno[123] logId[-] uri[/test/test2] user[-] refer[http://www.baidu.com] cookie[c1=cookie1;c2=cookie2]  error\n";
         assert.equal(str,logger.getLogString(format));
     })
 
@@ -299,9 +299,19 @@ describe('LogFomatter', function(){
         assert.equal("[cookie1]\n",logger.getLogString(format));
     })
 
-    //测试获取自定义项的配置
+    //测试获取默认自定义项的配置
     it("#{u_xx}x custom item format",function(){
         var format = '%{u_err_msg}x'; 
         assert.equal("error\n",logger.getLogString(format));
+    })
+
+
+    //测试获取custom自定义字段的支持
+    it("#custom log filed",function(){
+        var logger2 = Logger.getLogger();
+        var format = "%L: %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x]";
+        logger2.warning({'custom':{'key1':'value1','key2':'value2'},'errno' : '123','msg' : 'test_error'});
+        var str = "WARNING: unkown * - [logid=- filename=- lineno=- errno=123 key1=value1 key2=value2 errmsg=test_error]\n";
+        assert.equal(str,logger2.getLogString(format));
     })
 })

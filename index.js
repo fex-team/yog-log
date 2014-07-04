@@ -320,7 +320,7 @@ Logger.prototype = {
      */
     writeLog : function(intLevel, options , log_format){
         //日志等级高于配置则不输出日志
-        if( intLevel > this.opts['intLevel'] || !this.levels[intLevel] ){
+        if( (intLevel > this.opts['intLevel'] || !this.levels[intLevel]) && !this.opts['debug'] ){
             return false;
         }
 

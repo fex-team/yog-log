@@ -54,6 +54,11 @@ describe('config', function(){
             logger.log('warning','test log');
             assert.equal(escape('test log'),logger.params['error_msg'] );
             assert.equal('WARNING', logger.params['current_level']);
+            logger.warning("test warning method");
+            logger.notice("test notice method");
+            logger.debug("test debug method");
+            logger.trace("test debug method");
+            logger.fatal("test fatal method");
 
             //传递错误码，堆栈等
             logger.log('warning', {'stack' : new Error("error happened!"),'errno' : 123} );
@@ -73,7 +78,7 @@ describe('config', function(){
     describe('#app', function(){
         it('should use app name for log dir',function(){
             var app = 'apptest';
-            var logger = Logger.getLogger({'app' : app});
+            var logger = Logger.getLogger({'app' : app,'is_omp':1});
             var logFile = logger.getLogFile();
 
             //使用use_sub_dir时需有子文件夹
@@ -132,9 +137,17 @@ describe('config', function(){
     describe('#access_log_path', function(){
         it('should work without error when path setting is wrong',function(){
             var app = 'access',access_log_path = '/acdess^*%&%*(&())//test2/';
-            var logger = Logger.getLogger({'app' : app,'access_log_path' : access_log_path });
+            var logger = Logger.getLogger({'app' : app,'access_log_path' : access_log_path ,'is_omp':2});
             logger.log("ACCESS"); 
             var pathname = path.dirname(access_log_path);   
+        })
+
+        it('log_path',function(){
+            var app = 'access',log_path = '/test/test2/';
+            var logger = Logger.getLogger({'app' : app,'log_path' : log_path });
+            logger.log("ACCESS");   
+            logger.log("ACCESS_ERROR");
+            logger.warning("test");
         })
     })
 
@@ -282,7 +295,7 @@ describe('LogFomatter', function(){
     it('default app log format ',function(){
         //默认配置去除时间
         var format = '%L: [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M';     
-        var str ="NOTICE: [-:-] errno[123] logId[-] uri[/test/test2] user[-] refer[http://www.baidu.com] cookie[c1=cookie1;c2=cookie2]  error\n";
+        var str ="NOTICE: [-:-] errno[123] logId[-] uri[/test/test2] user[] refer[http://www.baidu.com] cookie[c1=cookie1;c2=cookie2]  error\n";
         assert.equal(str,logger.getLogString(format));
     })
 
@@ -314,4 +327,44 @@ describe('LogFomatter', function(){
         var str = "WARNING: unkown * - [logid=- filename=- lineno=- errno=123 key1=value1 key2=value2 errmsg=test_error]\n";
         assert.equal(str,logger2.getLogString(format));
     })
+})
+
+
+describe('method', function(){
+    var request = {
+        'headers' : {
+            'x-forwarded-for' : '127.0.0.1',
+            'referer' : 'http://www.baidu.com',
+            'cookie' : 'test=1',
+            'user-agent' : 'chrome',
+            'host' : 'host.baidu.com',
+            'HTTP_X_BD_LOGID' :'1234567'
+        },
+        '_headers' : {
+            'content-length' : 20
+        },
+        'method' : 'GET',
+        'protocol' : 'http'
+    };
+    var response = {
+        '_headers' : {
+            'content-length' : 20
+        },
+        'statusCode' : 200
+    };
+    var logger = Logger.getLogger();
+
+    it("#parseReqParams",function(){            
+        logger.parseReqParams(request,response);
+        assert.equal(20,logger.getParams['CONTENT_LENGTH']);
+        assert.equal(200,logger.getParams['STATUS']);
+        assert.equal('host.baidu.com',logger.getParams['HTTP_HOST']);
+               
+    })
+
+    it("#getLogID",function(){
+        var logID = logger.getLogID(request); 
+        assert.equal('1234567',logID);
+    })
+
 })

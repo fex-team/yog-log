@@ -294,24 +294,6 @@ Logger.prototype = {
         return log_path + "/" + logFile + ".log";
     },
 
-    getLogPath : function(){
-        if(this.opts['IS_ODP'] == true ){
-            return this.opts['LOG_PATH'].replace(/\/$/,"");
-        }else{
-            //TODO 非ODP环境日志地址
-            return false;
-        }
-    },
-
-    getDataPath : function(){
-        if(this.opts('IS_ODP') == true ){
-            return this.opts['DATA_PATH'];
-        }else{
-            //TODO 非ODP环境数据地址
-            return false;
-        }
-    },
-
     /**
      * 写入信息到日志文件中，异步方式
      * @param  {[type]} intLevel   [日志等级，整数]

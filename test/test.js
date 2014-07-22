@@ -295,7 +295,7 @@ describe('LogFomatter', function(){
     it('default app log format ',function(){
         //默认配置去除时间
         var format = '%L: [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M';     
-        var str ="NOTICE: [-:-] errno[123] logId[-] uri[/test/test2] user[] refer[http://www.baidu.com] cookie[c1=cookie1;c2=cookie2]  error\n";
+        var str ="NOTICE: [-:-] errno[123] logId[-] uri[/test/test2] user[-] refer[http://www.baidu.com] cookie[c1=cookie1;c2=cookie2]  error\n";
         assert.equal(str,logger.getLogString(format));
     })
 
@@ -340,8 +340,10 @@ describe('method', function(){
             'host' : 'host.baidu.com',
             'HTTP_X_BD_LOGID' :'1234567'
         },
-        '_headers' : {
-            'content-length' : 20
+        'app' : {
+            'setting' : {
+                'port' : 80
+            }
         },
         'method' : 'GET',
         'protocol' : 'http'
@@ -350,15 +352,16 @@ describe('method', function(){
         '_headers' : {
             'content-length' : 20
         },
+        '_header' : {'test':1},
         'statusCode' : 200
     };
     var logger = Logger.getLogger();
 
     it("#parseReqParams",function(){            
         logger.parseReqParams(request,response);
-        assert.equal(20,logger.getParams['CONTENT_LENGTH']);
-        assert.equal(200,logger.getParams['STATUS']);
-        assert.equal('host.baidu.com',logger.getParams['HTTP_HOST']);
+        assert.equal(20,logger.params['CONTENT_LENGTH']);
+        assert.equal(200,logger.params['STATUS']);
+        assert.equal('host.baidu.com',logger.params['HTTP_HOST']);
                
     })
 

@@ -110,6 +110,7 @@ Logger.prototype = {
         //解析错误堆栈信息
         this.parseStackInfo(option);  
         //解析自定义字段，存放在对应ODP的 encoded_str_array中
+        this.params['encoded_str_array'] = "";
         if(option['custom']){
             this.parseCustomLog(option['custom']);
         }  

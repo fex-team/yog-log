@@ -479,7 +479,8 @@ describe('method', function(){
             var str = 'WARNING: unknow *  [logid=- filename=- lineno=- errno=123 key1=value1 key2=value2 errmsg=case]\n';
             logger.warning(options);
             logger.opts['debug']=1;
-            assert.equal(str,logger.writeLog(intLevel,options,format));
+	    logger.writeLog(intLevel,options,format);
+            assert.equal(str,logger.getLogString(intLevel,options,format));
         })
     })
 
@@ -513,10 +514,10 @@ describe('module', function(){
             "data_path" :__dirname+ "/"
         };
         app.use(Logger(conf));
-        app.listen(8000);
+        app.listen(8089);
         var options = {
             hostname: '127.0.0.1',
-            port: 8000,
+            port: 8089,
             path: '/',
             method: 'POST'
         };

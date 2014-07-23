@@ -1,4 +1,4 @@
-
+﻿
 /**
  *  测试点归纳
  *  1. 没有配置时默认配置运行正常
@@ -13,6 +13,8 @@ var assert = require("assert");
 var util   = require("../lib/util.js");
 var fs     = require("fs");
 var path   = require("path");
+var http = require('http');
+var app = require('express')();
 
 //判断元素是否在数组中
 function in_array(array,e) { 
@@ -73,6 +75,12 @@ describe('config', function(){
         })
     })
 
+    describe('data_path',function(){
+        var logger = Logger.getLogger({data_path : __dirname+'/'});
+        it('data_path should equal to set',function(){
+            assert.equal(__dirname+'/',logger.opts['data_path']);
+        })
+    })
 
     //测试应用名称及是否使用子文件夹配置
     describe('#app', function(){
@@ -150,7 +158,6 @@ describe('config', function(){
             logger.warning("test");
         })
     })
-
 })
 
 
@@ -249,6 +256,41 @@ describe('Log', function(){
         */
     })
 
+    //测试LogID是否正常
+    it('LogId should equal to set',function(){
+        var req = {
+            'headers' : {
+                'x-forwarded-for' : '127.0.0.1',
+                'referer' : 'http://www.baidu.com',
+                'user-agent' : 'chrome',
+                'host' : 'host.baidu.com',
+                'HTTP_X_BD_LOGID' :'456'
+            },
+            query :{
+              'logid' : '789'
+            },
+            'app' : {
+                'setting' : {
+                    'port' : 80
+                }
+            },
+            'method' : 'GET',
+            'protocol' : 'http'
+        };
+        var logger = Logger.getLogger();
+        logger.params['LogId']=123;
+        assert.equal(123,logger.getLogID());
+        delete logger.params['LogId'];
+        assert.equal(456,logger.getLogID(req));
+        delete req.headers.HTTP_X_BD_LOGID;
+        assert.equal(789,logger.getLogID(req));
+        delete req.query.logid;
+        logger.params['COOKIE'] = "name=app_test;logid=111;SECURE";
+        assert.equal(111,logger.getLogID(req));
+        delete logger.params['COOKIE'];
+        var logid = logger.getLogID();
+    })
+
     //默认的日志格式配置及错误的配置下不报错
     it("#getLogString should work without error",function(){      
         var format = logger.format;
@@ -326,6 +368,9 @@ describe('LogFomatter', function(){
         logger2.warning({'custom':{'key1':'value1','key2':'value2'},'errno' : '123','msg' : 'test_error'});
         var str = "WARNING: unkown * - [logid=- filename=- lineno=- errno=123 key1=value1 key2=value2 errmsg=test_error]\n";
         assert.equal(str,logger2.getLogString(format));
+        logger2.warning({'custom' : 'test','errno' : '456','msg' : 'test_error'});
+        str="WARNING: unkown * - [logid=- filename=- lineno=- errno=456 - errmsg=test_error]\n";
+        assert.equal(str,logger2.getLogString(format));
     })
 })
 
@@ -335,10 +380,13 @@ describe('method', function(){
         'headers' : {
             'x-forwarded-for' : '127.0.0.1',
             'referer' : 'http://www.baidu.com',
-            'cookie' : 'test=1',
             'user-agent' : 'chrome',
             'host' : 'host.baidu.com',
-            'HTTP_X_BD_LOGID' :'1234567'
+            'HTTP_X_BD_LOGID' : '456',
+            'cookie' : 'test=1;'
+        },
+        query :{
+            'logid' : '789'
         },
         'app' : {
             'setting' : {
@@ -357,17 +405,127 @@ describe('method', function(){
     };
     var logger = Logger.getLogger();
 
-    it("#parseReqParams",function(){            
+    describe("#parseReqParams",function(){
         logger.parseReqParams(request,response);
-        assert.equal(20,logger.params['CONTENT_LENGTH']);
-        assert.equal(200,logger.params['STATUS']);
-        assert.equal('host.baidu.com',logger.params['HTTP_HOST']);
-               
+        it('content_length',function(){
+            assert.equal(20,logger.params['CONTENT_LENGTH']);
+        })
+        it('status',function(){
+            assert.equal(200,logger.params['STATUS']);
+        })
+        it('http_host',function(){
+            assert.equal('host.baidu.com',logger.params['HTTP_HOST']);
+        })
+
+        respose = null;
+        it('parseReqParams should return false',function(){
+            assert.equal(false,logger.parseReqParams(request,respose));
+        })
     })
 
-    it("#getLogID",function(){
-        var logID = logger.getLogID(request); 
-        assert.equal('1234567',logID);
+    //测试LogID是否正常
+    describe('#getLogID',function(){
+        it('params Logid',function(){
+            logger.params['LogId']=123;
+            assert.equal(123,logger.getLogID());
+        })
+
+        it('http_x_bd_logid',function(){
+            delete logger.params['LogId'];
+            assert.equal(456,logger.getLogID(request));
+        })
+
+        it('query.logid',function(){
+            delete request.headers.HTTP_X_BD_LOGID;
+            assert.equal(789,logger.getLogID(request));
+        })
+
+        it('cookie logid',function(){
+            delete request.query.logid;
+            logger.params['COOKIE'] = "name=app_test;logid=111;SECURE";
+            assert.equal(111,logger.getLogID(request));
+        })
+
+        it('random logid',function(){
+            delete logger.params['COOKIE'];
+            var logid = logger.getLogID();
+        })
     })
 
+    describe('#setParams',function(){
+        logger.setParams('name','wfg');
+        it('set params',function(){
+            assert.equal('wfg',logger.params['name']);
+        })
+    })
+
+    describe('#getLogPrefix',function(){
+        logger.opts['IS_ODP']=false;
+        it('should unkonw',function(){
+            assert.equal('unknow',logger.getLogPrefix());
+        })
+    })
+
+    describe('#writeLog',function(){
+        it('test writeLog',function(){
+            var options = {'custom':{'key1':'value1','key2':'value2'},'errno' : '123','msg' : 'case'};
+            var intLevel = logger.getLogLevelInt('abc');
+            var format;
+            assert.equal(false,logger.writeLog(intLevel,options,format));
+            intLevel = logger.getLogLevelInt('WARNING');
+            delete logger.format['DEFAULT'];
+            assert.equal(false,logger.writeLog(intLevel,options,format));
+            format = "%L: %{app}x *  [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x]";
+            var str = 'WARNING: unknow *  [logid=- filename=- lineno=- errno=123 key1=value1 key2=value2 errmsg=case]\n';
+            logger.warning(options);
+            logger.opts['debug']=1;
+            assert.equal(str,logger.writeLog(intLevel,options,format));
+        })
+    })
+
+    describe('#parseFormat',function(){
+        it('test parseFormat',function(){
+            logger.params['CLIENT_IP']="127.0.0.1";
+            logger.params['SERVER_ADDR'] = 'server addr';
+            logger.params['HTTP_COOKIE'] = request.headers['cookie'];
+            logger.params['SERVER_PORT'] = '8000';
+            logger.params['QUERY_STRING'] = 'debug=1';
+            logger.params['HOSTNAME'] = 'wfg';
+            logger.params['HTTP_HOST'] = 'http_host';
+            logger.params['LineNumber'] = 1;
+            logger.params['FunctionName'] = 'myFunction';
+            logger.params['log_level'] = 'warning';
+            var format = "%{log_level}x %e %T: [logid=%{log_id}x client_ip=%a server_addr=%A %{}C server_port=%p query_string=%q hostname=%v http_host=%V LineNumber=%{line}x FunctionName=%{function}x]"
+            var str = 'WARNING  : [logid=- client_ip=127.0.0.1 server_addr=server addr test=1; server_port=8000 query_string=debug=1 hostname=wfg http_host=http_host LineNumber=1 FunctionName=myFunction]\n';
+            //console.log(logger.getLogString(format));
+            assert.equal(str,logger.getLogString(format));
+        })
+        //console.log(log(util));
+    })
+})
+
+describe('module', function(){
+    it('test express',function(){
+        var conf = {"level" : 16, //线上一般填4，参见配置项说明
+            "app": "app_name", //app名称，产品线或项目名称等
+            "log_path": __dirname+"/data/log",//日志存放地址'
+            "data_path" :__dirname+ "/"
+        };
+        app.use(Logger(conf));
+        app.listen(8000);
+        var options = {
+            hostname: '127.0.0.1',
+            port: 8000,
+            path: '/',
+            method: 'POST'
+        };
+
+        var req = http.request(options, function(res) {
+            res.setEncoding('utf8');
+        });
+
+        req.write('data\n');
+        req.write('data\n');
+        req.end();
+    })
 })

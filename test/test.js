@@ -504,6 +504,7 @@ describe('method', function(){
     })
 })
 
+//测试yog-log应用于express框架
 describe('module', function(){
     it('test express',function(){
         var conf = {"level" : 16, //线上一般填4，参见配置项说明

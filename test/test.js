@@ -516,7 +516,7 @@ describe('module', function(){
         app.use(Logger(conf));
         app.listen(8089);
         var options = {
-            hostname: '127.0.0.1',
+            hostname: 'localhost',
             port: 8089,
             path: '/',
             method: 'POST'

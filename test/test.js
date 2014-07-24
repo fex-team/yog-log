@@ -507,37 +507,40 @@ describe('method', function(){
 
 //测试yog-log应用于express框架
 describe('module', function(){
-    it('test express',function(){
+    it('test express',function(done){
         var conf = {"level" : 16, //线上一般填4，参见配置项说明
             "app": "app_name", //app名称，产品线或项目名称等
             "log_path": __dirname+"/data/log",//日志存放地址'
             "data_path" :__dirname+ "/"
         };
         app.use(Logger(conf));
-        app.listen(8089);
-var options = {
-  hostname: '127.0.0.1',
-  port: 8089,
-  path: '/',
-  method: 'POST'
-};
+        app.use(function(req,res){
+            res.send('hello');
+	console.log('test!!!!!');
+	done();
+        });
+        app.listen(8827);
+        var options = {
+            hostname: '127.0.0.1',
+            port: 8827,
+            path: '/',
+            method: 'POST'
+        };
+        var req = http.request(options, function(res) {
+            console.log('STATUS: ' + res.statusCode);
+            console.log('HEADERS: ' + JSON.stringify(res.headers));
+            res.setEncoding('utf8');
+            res.on('data', function (chunk) {
+                console.log('BODY: ' + chunk);
+            });
+        });
 
-var req = http.request(options, function(res) {
-  console.log('STATUS: ' + res.statusCode);
-  console.log('HEADERS: ' + JSON.stringify(res.headers));
-  res.setEncoding('utf8');
-  res.on('data', function (chunk) {
-    console.log('BODY: ' + chunk);
-  });
-});
+        req.on('error', function(e) {
+            console.log('problem with request: ' + e.message);
+        });
 
-req.on('error', function(e) {
-  console.log('problem with request: ' + e.message);
-});
-
-// write data to request body
-req.write('data\n');
-req.write('data\n');
-req.end();
+        req.write('data\n');
+        req.write('data\n');
+        req.end();
     })
 })

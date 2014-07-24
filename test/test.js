@@ -516,8 +516,8 @@ describe('module', function(){
         app.use(Logger(conf));
         app.use(function(req,res){
             res.send('hello');
-	console.log('test!!!!!');
-	done();
+	    console.log('test!!!!!');
+	    console.log('dwafagfg');
         });
         app.listen(8827);
         var options = {

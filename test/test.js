@@ -505,7 +505,7 @@ describe('method', function(){
 
 //测试yog-log应用于express框架
 describe('module', function(){
-    it('test express',function(){
+    it('test express',function(done){
         var conf = {"level" : 16, //线上一般填4，参见配置项说明
             "app": "app_name", //app名称，产品线或项目名称等
             "log_path": __dirname+"/data/log",//日志存放地址'
@@ -514,6 +514,7 @@ describe('module', function(){
         app.use(Logger(conf));
         app.use(function(req,res){
             res.send('hello');
+            done();
         });
         app.listen(8827);
         var options = {
@@ -523,12 +524,9 @@ describe('module', function(){
             method: 'POST'
         };
         var req = http.request(options, function(res) {
-
         });
-
         req.on('error', function(e) {
         });
-
         req.write('data\n');
         req.write('data\n');
         req.end();

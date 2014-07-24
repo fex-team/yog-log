@@ -2,7 +2,7 @@
 /**
  *  测试点归纳
  *  1. 没有配置时默认配置运行正常
- *  2. 配置错误时运行正常 
+ *  2. 配置错误时运行正常
  *  3. 写日志及种类类型(兼容OMP等)
  *  4. 获取日志格式错误
  *  5. 解析request和response对象，判断是否正常 todo
@@ -17,11 +17,11 @@ var http = require('http');
 var app = require('express')();
 
 //判断元素是否在数组中
-function in_array(array,e) { 
+function in_array(array,e) {
     for(i=0;i<array.length;i++)
     {
         if(array[i] == e)
-        return true;
+            return true;
     }
     return false;
 }
@@ -109,19 +109,19 @@ describe('config', function(){
         })
     })
 
-    
+
     //测试是否默认按小时切分设置
     describe('#auto_rotate', function(){
         it('should ratote log in hour',function(done){
             var logger = Logger.getLogger();
             var logFile = logger.getLogFile() + ".wf." + util.strftime(new Date(),'%Y%m%d%H');
-            logger.log('warning', {'stack' : new Error("error happened!"),'errno' : 1234} ); 
+            logger.log('warning', {'stack' : new Error("error happened!"),'errno' : 1234} );
             var t=setInterval(function(){
                 if(fs.existsSync(logFile)){
                     clearInterval(t);
-                    done(); 
-                } 
-            },50);       
+                    done();
+                }
+            },50);
         })
     })
 
@@ -136,7 +136,7 @@ describe('config', function(){
             if(logFile.indexOf(access_log_path) < 0 ){
                 assert.fail(logFile , access_log_path + ".xxx",'should use custom access log path');
             }
-            
+
         })
     })
 
@@ -146,14 +146,14 @@ describe('config', function(){
         it('should work without error when path setting is wrong',function(){
             var app = 'access',access_log_path = '/acdess^*%&%*(&())//test2/';
             var logger = Logger.getLogger({'app' : app,'access_log_path' : access_log_path ,'is_omp':2});
-            logger.log("ACCESS"); 
-            var pathname = path.dirname(access_log_path);   
+            logger.log("ACCESS");
+            var pathname = path.dirname(access_log_path);
         })
 
         it('log_path',function(){
             var app = 'access',log_path = '/test/test2/';
             var logger = Logger.getLogger({'app' : app,'log_path' : log_path });
-            logger.log("ACCESS");   
+            logger.log("ACCESS");
             logger.log("ACCESS_ERROR");
             logger.warning("test");
         })
@@ -173,20 +173,20 @@ describe('Log', function(){
 
 
     //测试兼容OMP的日志类型是否正常
-    it('should have two type of log where IS_OMP=0', function(done){    
+    it('should have two type of log where IS_OMP=0', function(done){
         var log_path = logger.opts['log_path'] + "/" + logger.opts['app'];
-        logger.log('warning', {'stack' : new Error("error happened!"),'errno' : 1234} ); 
+        logger.log('warning', {'stack' : new Error("error happened!"),'errno' : 1234} );
         var t = setInterval(function(){
             if(fs.existsSync(log_path)){
                 var logs = fs.readdirSync(log_path).sort();
                 if(logs.length > 0){
                     //排序后第一个是.wf.日志 最后一个是.wf.new日志
                     if(logs[0].indexOf(".wf.") < 0 || logs[logs.length - 1].indexOf(".wf.new") < 0){
-                        assert.fail(logs , ".wf.xx and .wf.new.xx",'should have two type of log when is_omp = 0');                             
+                        assert.fail(logs , ".wf.xx and .wf.new.xx",'should have two type of log when is_omp = 0');
                     }
                     done();
-                    clearInterval(t);  
-                }               
+                    clearInterval(t);
+                }
             }
         },50);
 
@@ -194,11 +194,11 @@ describe('Log', function(){
 
 
     //测试默认的应用日志是否生成
-    it('should have default app log', function(done){ 
-        logger.opts['app'] = "log_test2";  
+    it('should have default app log', function(done){
+        logger.opts['app'] = "log_test2";
         var log_path = logger.opts['log_path'] + "/" + logger.opts['app'];
-        deleteFolder(log_path); 
-        logger.log('notice', {'stack' : new Error("error happened!"),'errno' : 1234} ); 
+        deleteFolder(log_path);
+        logger.log('notice', {'stack' : new Error("error happened!"),'errno' : 1234} );
         var t = setInterval(function(){
             if(fs.existsSync(log_path)){
                 var logs = fs.readdirSync(log_path);
@@ -208,9 +208,9 @@ describe('Log', function(){
                     if(fileSize < 10){
                         throw new Error("no log record in file");
                     }
-                    done(); 
+                    done();
                     clearInterval(t);
-                }                                    
+                }
             }
         },50);
 
@@ -220,7 +220,7 @@ describe('Log', function(){
     it("should have access log ",function(done){
         logger.log('ACCESS');
         var log_path = logger.opts['log_path'] + "/access/";
-        deleteFolder(log_path); 
+        deleteFolder(log_path);
         //存在访问日志文件且日志文件有记录
         var t = setInterval(function(){
             if(fs.existsSync(log_path)){
@@ -231,9 +231,9 @@ describe('Log', function(){
                     if(fileSize < 10){
                         throw new Error("no log record in file");
                     }
-                    done(); 
+                    done();
                     clearInterval(t);
-                }                                    
+                }
             }
         },50);
     })
@@ -243,17 +243,17 @@ describe('Log', function(){
 
         //js暂时没找到毫秒级别内生成10位不重复随机数的办法
         /*var IDList = [];
-        //一万个随机数判断是否唯一
-        for (var i = 0 ; i <= 10000; i++) {
-            var id = logger.getLogID();
-            if(in_array(IDList,id) ) {
-                throw new Error("logID is not unique");
-            }else if( id < 0 ){
-                throw new Error("logID should > 0");
-            }
-            IDList.push(id);
-        };
-        */
+         //一万个随机数判断是否唯一
+         for (var i = 0 ; i <= 10000; i++) {
+         var id = logger.getLogID();
+         if(in_array(IDList,id) ) {
+         throw new Error("logID is not unique");
+         }else if( id < 0 ){
+         throw new Error("logID should > 0");
+         }
+         IDList.push(id);
+         };
+         */
     })
 
     //测试LogID是否正常
@@ -267,7 +267,7 @@ describe('Log', function(){
                 'HTTP_X_BD_LOGID' :'456'
             },
             query :{
-              'logid' : '789'
+                'logid' : '789'
             },
             'app' : {
                 'setting' : {
@@ -292,14 +292,14 @@ describe('Log', function(){
     })
 
     //默认的日志格式配置及错误的配置下不报错
-    it("#getLogString should work without error",function(){      
+    it("#getLogString should work without error",function(){
         var format = logger.format;
         format['test1'] = '%L: %t [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M';
         format['test2'] = '%L: %t [%f:%N] errno[%E]logId[%l uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M';
         format['test3'] = '%L: %t [%fN] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookiei] %S M';
         for(var f in format){
             var str = logger.getLogString(format[f]);
-        }      
+        }
     })
 
 })
@@ -308,7 +308,7 @@ describe('Log', function(){
 //测试日志配置格式化主要参数是否正常
 describe('LogFomatter', function(){
 
-   
+
 
     var logger = Logger.getLogger();
 
@@ -324,8 +324,8 @@ describe('LogFomatter', function(){
     logger.params['QUERY_STRING'] = "?query=params";
     logger.params['REQUEST_URI'] = "/test/test2";
     logger.params['HOSTNAME'] = "hostname";
-    logger.params['HTTP_HOST'] = 'http_host'; 
-    logger.params['HTTP_VERSION'] = '1.1'; 
+    logger.params['HTTP_HOST'] = 'http_host';
+    logger.params['HTTP_VERSION'] = '1.1';
     logger.params['STATUS'] = 200;
     logger.params['CONTENT_LENGTH'] = 500;
     logger.params['current_level'] = "NOTICE";
@@ -336,7 +336,7 @@ describe('LogFomatter', function(){
     // 默认配置'%L: %t [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M';   
     it('default app log format ',function(){
         //默认配置去除时间
-        var format = '%L: [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M';     
+        var format = '%L: [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M';
         var str ="NOTICE: [-:-] errno[123] logId[-] uri[/test/test2] user[-] refer[http://www.baidu.com] cookie[c1=cookie1;c2=cookie2]  error\n";
         assert.equal(str,logger.getLogString(format));
     })
@@ -350,13 +350,13 @@ describe('LogFomatter', function(){
 
     //测试获取单个cookie的配置
     it("#C cookie format",function(){
-        var format = '[%{c1}C]'; 
+        var format = '[%{c1}C]';
         assert.equal("[cookie1]\n",logger.getLogString(format));
     })
 
     //测试获取默认自定义项的配置
     it("#{u_xx}x custom item format",function(){
-        var format = '%{u_err_msg}x'; 
+        var format = '%{u_err_msg}x';
         assert.equal("error\n",logger.getLogString(format));
     })
 
@@ -479,7 +479,7 @@ describe('method', function(){
             var str = 'WARNING: unknow *  [logid=- filename=- lineno=- errno=123 key1=value1 key2=value2 errmsg=case]\n';
             logger.warning(options);
             logger.opts['debug']=1;
-	    logger.writeLog(intLevel,options,format);
+            logger.writeLog(intLevel,options,format);
             assert.equal(str,logger.getLogString(format));
         })
     })
@@ -507,7 +507,7 @@ describe('method', function(){
 
 //测试yog-log应用于express框架
 describe('module', function(){
-    it('test express',function(){
+    it('test express',function(done){
         var conf = {"level" : 16, //线上一般填4，参见配置项说明
             "app": "app_name", //app名称，产品线或项目名称等
             "log_path": __dirname+"/data/log",//日志存放地址'
@@ -529,5 +529,6 @@ describe('module', function(){
         req.write('data\n');
         req.write('data\n');
         req.end();
+        done();
     })
 })

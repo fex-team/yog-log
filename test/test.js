@@ -468,15 +468,15 @@ describe('method', function(){
 
     describe('#writeLog',function(){
         it('test writeLog',function(){
-            var options = {'custom':{'key1':'value1','key2':'value2'},'errno' : '123','msg' : 'case'};
+            var options = {'custom':{'key1':'value1','key2':'value2'},'errno' : '123','msg' : 'shouldbereplace'};
             var intLevel = logger.getLogLevelInt('abc');
             var format;
             assert.equal(false,logger.writeLog(intLevel,options,format));
             intLevel = logger.getLogLevelInt('WARNING');
             delete logger.format['DEFAULT'];
             assert.equal(false,logger.writeLog(intLevel,options,format));
-            format = "%L: %{app}x *  [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x]";
-            var str = 'WARNING: unknow *  [logid=- filename=- lineno=- errno=123 key1=value1 key2=value2 errmsg=case]\n';
+            format = "%{u_err_msg}x";
+            var str = 'shouldbereplace\n';
             logger.warning(options);
             logger.opts['debug']=1;
             logger.writeLog(intLevel,options,format);
@@ -498,10 +498,8 @@ describe('method', function(){
             logger.params['log_level'] = 'warning';
             var format = "%{log_level}x %e %T: [logid=%{log_id}x client_ip=%a server_addr=%A %{}C server_port=%p query_string=%q hostname=%v http_host=%V LineNumber=%{line}x FunctionName=%{function}x]"
             var str = 'WARNING  : [logid=- client_ip=127.0.0.1 server_addr=server addr test=1; server_port=8000 query_string=debug=1 hostname=wfg http_host=http_host LineNumber=1 FunctionName=myFunction]\n';
-            //console.log(logger.getLogString(format));
             assert.equal(str,logger.getLogString(format));
         })
-        //console.log(log(util));
     })
 })
 
@@ -525,16 +523,10 @@ describe('module', function(){
             method: 'POST'
         };
         var req = http.request(options, function(res) {
-            console.log('STATUS: ' + res.statusCode);
-            console.log('HEADERS: ' + JSON.stringify(res.headers));
-            res.setEncoding('utf8');
-            res.on('data', function (chunk) {
-                console.log('BODY: ' + chunk);
-            });
+
         });
 
         req.on('error', function(e) {
-            console.log('problem with request: ' + e.message);
         });
 
         req.write('data\n');

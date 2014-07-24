@@ -515,19 +515,29 @@ describe('module', function(){
         };
         app.use(Logger(conf));
         app.listen(8089);
-        var options = {
-            hostname: 'localhost',
-            port: 8089,
-            path: '/',
-            method: 'POST'
-        };
+var options = {
+  hostname: '127.0.0.1',
+  port: 8089,
+  path: '/',
+  method: 'POST'
+};
 
-        var req = http.request(options, function(res) {
-            res.setEncoding('utf8');
-        });
+var req = http.request(options, function(res) {
+  console.log('STATUS: ' + res.statusCode);
+  console.log('HEADERS: ' + JSON.stringify(res.headers));
+  res.setEncoding('utf8');
+  res.on('data', function (chunk) {
+    console.log('BODY: ' + chunk);
+  });
+});
 
-        req.write('data\n');
-        req.write('data\n');
-        req.end();
+req.on('error', function(e) {
+  console.log('problem with request: ' + e.message);
+});
+
+// write data to request body
+req.write('data\n');
+req.write('data\n');
+req.end();
     })
 })

@@ -480,7 +480,7 @@ describe('method', function(){
             logger.warning(options);
             logger.opts['debug']=1;
 	    logger.writeLog(intLevel,options,format);
-            assert.equal(str,logger.getLogString(intLevel,options,format));
+            assert.equal(str,logger.getLogString(format));
         })
     })
 

@@ -515,6 +515,7 @@ describe('module', function(){
         };
         app.use(Logger(conf));
         app.listen(8089);
+	done();
         var options = {
             hostname: '127.0.0.1',
             port: 8089,
@@ -529,6 +530,5 @@ describe('module', function(){
         req.write('data\n');
         req.write('data\n');
         req.end();
-        done();
     })
 })

@@ -647,8 +647,9 @@ module.exports = function(config){
         function logRequest(){
             res.removeListener('finish', logRequest);
             res.removeListener('close', logRequest);
-            logger.parseReqParams(req,res);
-
+            //以下参数需要在response finish的时候计算
+            logger.params['STATUS'] = res._header ? res.statusCode : null;
+            logger.params['CONTENT_LENGTH'] = (res._headers || {})['content-length'] || "-";
             if(res.statusCode == '301' || res.statusCode == '404'){
                 logger.log("ACCESS_ERROR");
             }else{
@@ -661,7 +662,7 @@ module.exports = function(config){
         
         //只在请求过来的时候才设置LogId
         logger.params['LogId'] = logger.getLogID(req);
-
+        logger.parseReqParams(req,res);
         current.add(logger);
         current.logger = logger; // Add request object to custom property
         

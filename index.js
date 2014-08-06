@@ -61,12 +61,14 @@ var Logger = function(opts){
     //保存一次错误及请求的详情信息
     this.params = {};
 
+    //var format_wf = '%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x]';
+
     //[10/Jun/2014:22:01:35 +0800]
-    //应用日志格式
+    //应用日志格式，默认wf日志与default日志一样
     this.format = {
         'ACCESS' : '%h - - [%{%d/%b/%Y:%H:%M:%S %Z}t] "%m %U %H/%{http_version}i" %{status}i %b %{Referer}i %{Cookie}i %{User-Agent}i %D',
         'ACCESS_ERROR' : '%h - - [%{%d/%b/%Y:%H:%M:%S %Z}t] "%m %U %H/%{http_version}i" %{status}i %b %{Referer}i %{Cookie}i %{User-Agent}i %D',
-        'WF'   : this.opts['format_wf'] ||  '%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x]',
+        'WF'   : this.opts['format_wf'] ||  '%L: %t [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M',
         'DEFAULT' : this.opts['format'] || '%L: %t [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M',
         'STD'     :  '%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x]',
         'STD_DETAIL' : '%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x cookie=%{u_cookie}x]'
@@ -167,7 +169,7 @@ Logger.prototype = {
      */
     parseStackInfo : function(option){
         this.params['errno'] = option['errno'] || 0; //错误号
-        this.params['error_msg'] = escape(option['msg'] || ""); //自定义错误信息
+        this.params['error_msg'] = option['msg'] || ""; //自定义错误信息,%M默认不转义
         this.params['TypeName'] = "";
         this.params['FunctionName'] = "";
         this.params['MethodName'] = "";

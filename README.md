@@ -32,7 +32,7 @@
                 "name": "yog-log",
                 "arguments": [
                     {
-                        "level" : 16, //线上一般填4，参见配置项说明
+                        "intLevel" : 16, //线上一般填4，参见配置项说明
                         "app": "app_name", //app名称，产品线或项目名称等
                         "log_path": "path:./data/log"//日志存放地址
                     }
@@ -80,7 +80,7 @@ logger.log('warning','msg');//or logger.warning('msg');
 app         | unknown    | app名称，推荐填写
 format		| 见下	| 默认应用日志格式
 format_wf	| 见下	| 默认的应用日志warning及fatal日志格式
-level		| 16	| log日志级别，高于此级别的日志不会输出
+intLevel		| 16	| log日志级别，高于此级别的日志不会输出
 auto_rotate	| 1	| 是否自动切分
 use_sub_dir	| 1	| 日志是否在二级目录打印，目录名为 `APP_NAME`
 log_path	| 插件安装地址/log	| 日志存放目录，注意需要设置

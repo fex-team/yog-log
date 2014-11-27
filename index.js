@@ -121,15 +121,19 @@ Logger.prototype = {
             this.writeLog(intLevel,option,format);
         }else{
             //IS_OMP等于0打印两种格式日志，等于1打印STD日志，等于2打印WF/Default日志
+            if(this.opts['IS_OMP'] == 0 || this.opts['IS_OMP'] == 2){
+                option['filename_suffix'] = "";
+                option['escape_msg'] = false; //错误消息不转义
+                this.writeLog(intLevel,option,format);
+            }
+
             if(this.opts['IS_OMP'] == 0 || this.opts['IS_OMP'] == 1){
                 option['filename_suffix'] = ".new";
+                option['escape_msg'] = true; //错误消息转义
                 this.writeLog(intLevel,option,this.format['STD']);
             }
 
-            if(this.opts['IS_OMP'] == 0 || this.opts['IS_OMP'] == 2){
-                option['filename_suffix'] = "";
-                this.writeLog(intLevel,option,format);
-            }
+            
         }        
     },
 
@@ -179,7 +183,7 @@ Logger.prototype = {
         if(option['stack'] ){
             try{
                 if(!option['msg']){
-                    this.params['error_msg'] = escape(option['stack']);
+                    this.params['error_msg'] = option['stack'];
                 }
                 var trace = stackTrace.parse(option['stack']);         
                 this.params['TypeName'] = trace[0].typeName;
@@ -191,8 +195,7 @@ Logger.prototype = {
             }catch(e){
                 //this.log('notice','wrong error obj');
             }
-        }
-        
+        }      
     },
 
     //解析自定义字段，'custom'字段
@@ -324,6 +327,12 @@ Logger.prototype = {
         //是否按小时自动切分
         if(this.opts['auto_rotate']){
             logFile += "." + util.strftime(new Date(),'%Y%m%d%H');
+        }
+
+        //STD日志需将错误日志转义
+        if(this.params['error_msg'] && !this.opts['debug']){
+            this.params['error_msg'] = options['escape_msg'] === true ? 
+                        escape(this.params['error_msg']) : unescape(this.params['error_msg']);
         }
 
         var format = log_format || this.format['DEFAULT'];

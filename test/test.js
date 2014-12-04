@@ -54,7 +54,7 @@ describe('config', function(){
             var logger = Logger.getLogger();
             //只传递消息
             logger.log('warning','test log');
-            assert.equal('test20%log',logger.params['error_msg'] );
+            assert.equal('test%20log',logger.params['error_msg'] );
             assert.equal('WARNING', logger.params['current_level']);
             logger.warning("test warning method");
             logger.notice("test notice method");

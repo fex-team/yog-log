@@ -183,7 +183,8 @@ Logger.prototype = {
         if(option['stack'] ){
             try{
                 if(!option['msg']){
-                    this.params['error_msg'] = option['stack'];
+                    this.params['error_msg'] = this.opts['debug'] ? option['stack']
+                        : String(option['stack']).replace(/(\n)+|(\r\n)+/g, "#");
                 }
                 var trace = stackTrace.parse(option['stack']);         
                 this.params['TypeName'] = trace[0].typeName;
@@ -661,11 +662,13 @@ module.exports = function(config){
             //以下参数需要在response finish的时候计算
             logger.params['STATUS'] = res._header ? res.statusCode : null;
             logger.params['CONTENT_LENGTH'] = (res._headers || {})['content-length'] || "-";
-            if(res.statusCode == '301' || res.statusCode == '404'){
+            //暂时不区分访问错误日志
+            logger.log("ACCESS");
+            /*if(res.statusCode == '301' || res.statusCode == '404'){
                 logger.log("ACCESS_ERROR");
             }else{
                 logger.log("ACCESS");
-            }    
+            } */     
         }
 
         var current = domain.create();   

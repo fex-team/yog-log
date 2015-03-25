@@ -184,7 +184,7 @@ Logger.prototype = {
             try{
                 if(!option['msg']){
                     this.params['error_msg'] = this.opts['debug'] ? option['stack']
-                        : String(option['stack']).replace(/(\n)+|(\r\n)+/g, "#");
+                        : String(option['stack']).replace(/(\n)+|(\r\n)+/g, " ");
                 }
                 var trace = stackTrace.parse(option['stack']);         
                 this.params['TypeName'] = trace[0].typeName;

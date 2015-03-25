@@ -662,6 +662,11 @@ module.exports = function(config){
             //以下参数需要在response finish的时候计算
             logger.params['STATUS'] = res._header ? res.statusCode : null;
             logger.params['CONTENT_LENGTH'] = (res._headers || {})['content-length'] || "-";
+            if (req._startAt){
+                var diff = process.hrtime(req._startAt);
+                var ms = diff[0] * 1e3 + diff[1] * 1e-6;
+                logger.params['REQUEST_TIME'] =  ms.toFixed(3); 
+            };
             //暂时不区分访问错误日志
             logger.log("ACCESS");
             /*if(res.statusCode == '301' || res.statusCode == '404'){
@@ -680,17 +685,9 @@ module.exports = function(config){
         current.add(logger);
         current.logger = logger; // Add request object to custom property
         
-        //计算response-time
+        //response-time启动埋点
         req._startAt = process.hrtime();
         req._startTime = new Date;
-        res.on('header',function(){
-            if (req._startAt){
-                var diff = process.hrtime(req._startAt);
-                var ms = diff[0] * 1e3 + diff[1] * 1e-6;
-                logger.params['REQUEST_TIME'] =  ms.toFixed(3); 
-            };        
-        });
-
 
         res.on('finish', logRequest);
         res.on('close',  logRequest);

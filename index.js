@@ -9,54 +9,62 @@ var util = require('./lib/util.js'),
     mkdirp = require('mkdirp');
 
 var data_path = __dirname + "/"; //模板地址默认在模块里
-var log_path  = __dirname + "/log";
+var log_path = __dirname + "/log";
+var LOGGER_CACHE = {};
+var LOGFILE_CACHE = {};
 
-var Logger = function(opts){
-    //日志等级
-    this.levels = {
-        //访问日志 编号？
-        0   : 'ACCESS',
-        3   : 'ACCESS_ERROR',
-        //应用日志等级 ODP格式
-        1   : 'FATAL',
-        2   : 'WARNING',
-        4   : 'NOTICE',
-        8   : 'TRACE',
-        16  : 'DEBUG'
-    };
+//日志等级
+var LEVELS = {
+    //访问日志 编号？
+    0: 'ACCESS',
+    3: 'ACCESS_ERROR',
+    //应用日志等级 ODP格式
+    1: 'FATAL',
+    2: 'WARNING',
+    4: 'NOTICE',
+    8: 'TRACE',
+    16: 'DEBUG'
+};
 
-    //debug模式下应用日志等级对应的颜色
-    this.colors = {
-        1 : 'red',
-        2 : 'yellow',
-        4 : 'grey',
-        8 : 'cyan',
-        16 : 'blue'
-    };
+var LEVELS_REVERSE = {};
 
+for (var num in LEVELS) {
+    LEVELS_REVERSE[LEVELS[num]] = num;
+}
+
+//debug模式下应用日志等级对应的颜色
+var COLORS = {
+    1: 'red',
+    2: 'yellow',
+    4: 'grey',
+    8: 'cyan',
+    16: 'blue'
+};
+
+var Logger = function (opts) {
     //模板文件地址，可以不填
-    if(opts &&  opts['data_path']){
-        data_path  = opts['data_path'];
+    if (opts && opts['data_path']) {
+        data_path = opts['data_path'];
     }
 
     //用户只需要填写log_path配置
-    if(opts &&  opts['log_path']){
-        log_path  = opts['log_path'];
+    if (opts && opts['log_path']) {
+        log_path = opts['log_path'];
     }
-    
+
     this.opts = this.extend({
-        'app' : 'unkown',
-        'debug' : 0,
-        'intLevel' : 16,
-        'auto_rotate' : 1,
-        'use_sub_dir' : 1,
-        'IS_ODP' : true,
-        'IS_OMP' : 0,
+        'app': 'unkown',
+        'debug': 0,
+        'intLevel': 16,
+        'auto_rotate': 1,
+        'use_sub_dir': 1,
+        'IS_ODP': true,
+        'IS_OMP': 0,
         'log_path': log_path,
-        'access_log_path' : log_path + "/access",
-        'access_error_log_path' : log_path + "/access",
-        'data_path' : data_path + "data"
-    },opts);
+        'access_log_path': log_path + "/access",
+        'access_error_log_path': log_path + "/access",
+        'data_path': data_path + "data"
+    }, opts);
 
     //保存一次错误及请求的详情信息
     this.params = {};
@@ -66,99 +74,101 @@ var Logger = function(opts){
     //[10/Jun/2014:22:01:35 +0800]
     //应用日志格式，默认wf日志与default日志一样
     this.format = {
-        'ACCESS' : '%h - - [%{%d/%b/%Y:%H:%M:%S %Z}t] "%m %U %H/%{http_version}i" %{status}i %b %{Referer}i %{Cookie}i %{User-Agent}i %D',
-        'ACCESS_ERROR' : '%h - - [%{%d/%b/%Y:%H:%M:%S %Z}t] "%m %U %H/%{http_version}i" %{status}i %b %{Referer}i %{Cookie}i %{User-Agent}i %D',
-        'WF'   : this.opts['format_wf'] ||  '%L: %t [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M',
-        'DEFAULT' : this.opts['format'] || '%L: %t [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M',
-        'STD'     :  '%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x]',
-        'STD_DETAIL' : '%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x cookie=%{u_cookie}x]'
+        'ACCESS': '%h - - [%{%d/%b/%Y:%H:%M:%S %Z}t] "%m %U %H/%{http_version}i" %{status}i %b %{Referer}i %{Cookie}i %{User-Agent}i %D',
+        'ACCESS_ERROR': '%h - - [%{%d/%b/%Y:%H:%M:%S %Z}t] "%m %U %H/%{http_version}i" %{status}i %b %{Referer}i %{Cookie}i %{User-Agent}i %D',
+        'WF': this.opts['format_wf'] ||
+            '%L: %t [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M',
+        'DEFAULT': this.opts['format'] ||
+            '%L: %t [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M',
+        'STD': '%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x]',
+        'STD_DETAIL': '%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x cookie=%{u_cookie}x]'
     };
 
 }
 
 
 Logger.prototype = {
-    fatal : function(){
-        return this.log.call(this,'FATAL',arguments[0]);
+    fatal: function () {
+        return this.log.call(this, 'FATAL', arguments[0]);
     },
-    notice : function(){
-        return this.log.call(this,'NOTICE',arguments[0]);
+    notice: function () {
+        return this.log.call(this, 'NOTICE', arguments[0]);
     },
-    trace : function(){
-        return this.log.call(this,'TRACE',arguments[0]);
+    trace: function () {
+        return this.log.call(this, 'TRACE', arguments[0]);
     },
-    warning : function(){
-        return this.log.call(this,'WARNING',arguments[0]);
+    warning: function () {
+        return this.log.call(this, 'WARNING', arguments[0]);
     },
-    debug : function(){
-        return this.log.call(this,'DEBUG',arguments[0]);
+    debug: function () {
+        return this.log.call(this, 'DEBUG', arguments[0]);
     },
     //level表示日志I等级，obj表示错误消息或者错误选项
-    log : function(level,obj){
-        var level      = String(level).toUpperCase(); // WARNING格式
-        var intLevel   = this.getLogLevelInt(level); // 2格式
-        var format     = this.getLogFormat(level);
-        if(intLevel < 0 || !format){
+    log: function (level, obj) {
+        var level = String(level).toUpperCase(); // WARNING格式
+        var intLevel = this.getLogLevelInt(level); // 2格式
+        var format = this.getLogFormat(level);
+        if (intLevel < 0 || !format) {
             return false;
-        }   
-        var option =  {}; 
-        if(obj){
-            if(typeof obj == "string"){
+        }
+        var option = {};
+        if (obj) {
+            if (typeof obj == "string") {
                 option['msg'] = obj;
-            }else if(typeof obj == "object"){
+            } else if (typeof obj == "object") {
                 option = obj;
             }
         }
         //解析错误堆栈信息
-        this.parseStackInfo(option);  
+        this.parseStackInfo(option);
         //解析自定义字段，存放在对应ODP的 encoded_str_array中
         this.params['encoded_str_array'] = "";
-        if(option['custom']){
+        if (option['custom']) {
             this.parseCustomLog(option['custom']);
-        }  
+        }
 
-        if(intLevel == 0 || intLevel == 3){//访问日志     
-            this.writeLog(intLevel,option,format);
-        }else{
+        if (intLevel == 0 || intLevel == 3) { //访问日志     
+            this.writeLog(intLevel, option, format);
+        } else {
             //IS_OMP等于0打印两种格式日志，等于1打印STD日志，等于2打印WF/Default日志
-            if(this.opts['IS_OMP'] == 0 || this.opts['IS_OMP'] == 2){
+            if (this.opts['IS_OMP'] == 0 || this.opts['IS_OMP'] == 2) {
                 option['filename_suffix'] = "";
                 option['escape_msg'] = false; //错误消息不转义
-                this.writeLog(intLevel,option,format);
+                this.writeLog(intLevel, option, format);
             }
 
-            if(this.opts['IS_OMP'] == 0 || this.opts['IS_OMP'] == 1){
+            if (this.opts['IS_OMP'] == 0 || this.opts['IS_OMP'] == 1) {
                 option['filename_suffix'] = ".new";
                 option['escape_msg'] = true; //错误消息转义
-                this.writeLog(intLevel,option,this.format['STD']);
+                this.writeLog(intLevel, option, this.format['STD']);
             }
 
-            
-        }        
+
+        }
     },
 
-    extend :  function(destination, source) {
+    extend: function (destination, source) {
         for (var property in source) {
             destination[property] = source[property];
         }
         return destination;
     },
 
-    getLogFormat : function(level){
+    getLogFormat: function (level) {
         level = level.toUpperCase();
         var formats = this.format;
-        if(this.getLogLevelInt(level) < 0 ){
+        if (this.getLogLevelInt(level) < 0) {
             return false;
-        }   
+        }
         var format = formats['DEFAULT']; //默认格式，
         // ACCESS为访问格式
-        if(level == "ACCESS"){
+        if (level == "ACCESS") {
             format = formats['ACCESS'];
-        }else if(level == "ACCESS_ERROR"){
+        } else if (level == "ACCESS_ERROR") {
             format = formats['ACCESS_ERROR']; //访问错误 404 301等单独存储
-        }else{
+        } else {
             //warning和fatal格式不一样,且单独存储
-            if(level == "WARNING" || level == "FATAL"){
+            if (level == "WARNING" || level == "FATAL") {
                 format = formats['WF'];
             }
         }
@@ -171,7 +181,7 @@ Logger.prototype = {
      * @param  {[type]} option [description]
      * @return {[type]}        [description]
      */
-    parseStackInfo : function(option){
+    parseStackInfo: function (option) {
         this.params['errno'] = option['errno'] || 0; //错误号
         this.params['error_msg'] = option['msg'] || ""; //自定义错误信息,%M默认不转义
         this.params['TypeName'] = "";
@@ -180,59 +190,60 @@ Logger.prototype = {
         this.params['FileName'] = "";
         this.params['LineNumber'] = "";
         this.params['isNative'] = "";
-        if(option['stack'] ){
-            try{
-                if(!option['msg']){
-                    this.params['error_msg'] = this.opts['debug'] ? option['stack']
-                        : String(option['stack']).replace(/(\n)+|(\r\n)+/g, " ");
+        if (option['stack']) {
+            try {
+                if (!option['msg']) {
+                    this.params['error_msg'] = this.opts['debug'] ? option['stack'] : String(option['stack']).replace(
+                        /(\n)+|(\r\n)+/g, " ");
                 }
-                var trace = stackTrace.parse(option['stack']);         
+                var trace = stackTrace.parse(option['stack']);
                 this.params['TypeName'] = trace[0].typeName;
                 this.params['FunctionName'] = trace[0].functionName;
                 this.params['MethodName'] = trace[0].methodName;
                 this.params['FileName'] = trace[0].fileName;
                 this.params['LineNumber'] = trace[0].lineNumber;
                 this.params['isNative'] = trace[0].native;
-            }catch(e){
+            } catch (e) {
                 //this.log('notice','wrong error obj');
             }
-        }      
+        }
     },
 
     //解析自定义字段，'custom'字段
-    parseCustomLog : function(obj){
-        if("object" != typeof(obj)){
+    parseCustomLog: function (obj) {
+        if ("object" != typeof (obj)) {
             return false;
         }
         var items = [];
-        for(var key in obj){
-            if(obj.hasOwnProperty(key)){
+        for (var key in obj) {
+            if (obj.hasOwnProperty(key)) {
                 items.push(escape(key) + "=" + escape(obj[key]));
             }
         }
-        if(items.length > 0){
+        if (items.length > 0) {
             this.params['encoded_str_array'] = items.join(" ");
         }
     },
 
     //初始化请求相关的参数
-    parseReqParams : function(req,res){
-        if(!req || !req.headers || !res){
+    parseReqParams: function (req, res) {
+        if (!req || !req.headers || !res) {
             return false;
         }
-        this.params['CLIENT_IP'] = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.headers['x-real-ip'];
+        this.params['CLIENT_IP'] = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.headers[
+            'x-real-ip'];
         this.params['REFERER'] = req.headers['referer'];
         this.params['COOKIE'] = req.headers['cookie'];
-        this.params['USER_AGENT'] = req.headers['user-agent'] ;
-        this.params['SERVER_ADDR'] = req.headers.host ;
+        this.params['USER_AGENT'] = req.headers['user-agent'];
+        this.params['SERVER_ADDR'] = req.headers.host;
         this.params['SERVER_PROTOCOL'] = String(req.protocol).toUpperCase();
         this.params['REQUEST_METHOD'] = req.method || "";
         this.params['SERVER_PORT'] = req.app.settings ? req.app.settings.port : "";
         this.params['QUERY_STRING'] = req.query;
         this.params['REQUEST_URI'] = req.originalUrl;
         this.params['HOSTNAME'] = req.hostname;
-        this.params['HTTP_HOST'] =req.headers.host; 
-        this.params['HTTP_VERSION'] = req.httpVersionMajor + '.' + req.httpVersionMinor; 
+        this.params['HTTP_HOST'] = req.headers.host;
+        this.params['HTTP_VERSION'] = req.httpVersionMajor + '.' + req.httpVersionMinor;
         this.params['STATUS'] = res._header ? res.statusCode : null;
         this.params['CONTENT_LENGTH'] = (res._headers || {})['content-length'] || "-";
 
@@ -243,58 +254,59 @@ Logger.prototype = {
      * ODP环境下日志的前缀为AppName，非ODP环境需要配置指定前缀
      * @return {[string]} [description]
      */
-    getLogPrefix :  function(){
-        if(this.opts['IS_ODP'] == true ){
+    getLogPrefix: function () {
+        if (this.opts['IS_ODP'] == true) {
             return this.opts['app'];
-        }else{
+        } else {
             //TODO 获取模块名称
             return 'unknow';
         }
     },
 
     //获取logID，如果没有生成唯一随机数
-    getLogID : function(req){
+    getLogID: function (req) {
         var logId = 0;
 
-        if(this.params['LogId']){
+        if (this.params['LogId']) {
             return this.params['LogId'];
         }
 
-        if(req){
-            if(req.headers['HTTP_X_BD_LOGID']){
+        if (req) {
+            if (req.headers['HTTP_X_BD_LOGID']) {
                 logId = parseInt(req.headers['HTTP_X_BD_LOGID']);
-            }else if( parseInt(req.query['logid']) > 0 ){
+            } else if (parseInt(req.query['logid']) > 0) {
                 logId = parseInt(req.query['logid']);
-            }else if(parseInt(this.getCookie('logid')) > 0 ){
+            } else if (parseInt(this.getCookie('logid')) > 0) {
                 logId = parseInt(this.getCookie('logid'));
             }
         }
 
-        if(logId == 0){
+        if (logId == 0) {
             var obj = util.gettimeofday();
-            logId = ((obj['sec']*100000 + obj['usec']/10 + parseInt(Math.random()*100)  ) & 0x7FFFFFFF );
+            logId = ((obj['sec'] * 100000 + obj['usec'] / 10 + parseInt(Math.random() * 100)) & 0x7FFFFFFF);
         }
         return logId;
     },
 
     //获取日志文件地址。注意访问日志与应用日志的差异
-    getLogFile : function(intLevel){
+    getLogFile: function (intLevel) {
         var prefix = this.getLogPrefix();
-        var logFile = "" ,log_path = "";
-        switch(intLevel){
-            case '0' :  //访问日志前缀默认access
-                logFile =  this.opts['access_log_file'] || "access"; //访问日志
-                log_path = this.opts['access_log_path'] || this.opts['log_path'] ;
-                break;   
-            case '3':
-                logFile =  this.opts['access_error_log_file'] || "error"; //访问日志
-                log_path = this.opts['access_error_log_path'] || this.opts['log_path'] ;
-                break;         
-            default : //错误日志为app前缀
-                //是否使用子目录，app区分
-                log_path = this.opts['use_sub_dir'] ? 
-                        (this.opts['log_path'] + "/" + this.opts['app']) : this.opts['log_path'] ;
-                logFile = prefix;
+        var logFile = "",
+            log_path = "";
+        switch (intLevel) {
+        case '0': //访问日志前缀默认access
+            logFile = this.opts['access_log_file'] || "access"; //访问日志
+            log_path = this.opts['access_log_path'] || this.opts['log_path'];
+            break;
+        case '3':
+            logFile = this.opts['access_error_log_file'] || "error"; //访问日志
+            log_path = this.opts['access_error_log_path'] || this.opts['log_path'];
+            break;
+        default: //错误日志为app前缀
+            //是否使用子目录，app区分
+            log_path = this.opts['use_sub_dir'] ?
+                (this.opts['log_path'] + "/" + this.opts['app']) : this.opts['log_path'];
+            logFile = prefix;
         }
 
         return log_path + "/" + logFile + ".log";
@@ -307,141 +319,93 @@ Logger.prototype = {
      * @param  {[type]} log_format [日志格式]
      * @return {[type]}            [description]
      */
-    writeLog : function(intLevel, options , log_format){
+    writeLog: function (intLevel, options, log_format) {
         //日志等级高于配置则不输出日志
-        if( (intLevel > this.opts['intLevel'] || !this.levels[intLevel]) && !this.opts['debug'] ){
+        if ((intLevel > this.opts['intLevel'] || !LEVELS[intLevel]) && !this.opts['debug']) {
             return false;
         }
 
-        this.params['current_level'] = this.levels[intLevel];
+        this.params['current_level'] = LEVELS[intLevel];
 
         //日志文件名称
         var logFile = this.getLogFile(intLevel),
             filename_suffix = options['filename_suffix'] || "",
-            errno   = options['errno'] || 0;
+            errno = options['errno'] || 0;
 
-        if(this.getLogLevelInt('WARNING') == intLevel || this.getLogLevelInt('FATAL') == intLevel){
+        if (this.getLogLevelInt('WARNING') == intLevel || this.getLogLevelInt('FATAL') == intLevel) {
             logFile += ".wf";
         }
         //文件后缀
         logFile += filename_suffix;
         //是否按小时自动切分
-        if(this.opts['auto_rotate']){
-            logFile += "." + util.strftime(new Date(),'%Y%m%d%H');
+        if (this.opts['auto_rotate']) {
+            logFile += "." + util.strftime(new Date(), '%Y%m%d%H');
         }
 
         //STD日志需将错误日志转义
-        if(this.params['error_msg'] && !this.opts['debug']){
-            this.params['error_msg'] = options['escape_msg'] === true ? 
-                        escape(this.params['error_msg']) : unescape(this.params['error_msg']);
+        if (this.params['error_msg'] && !this.opts['debug']) {
+            this.params['error_msg'] = options['escape_msg'] === true ?
+                escape(this.params['error_msg']) : unescape(this.params['error_msg']);
         }
 
         var format = log_format || this.format['DEFAULT'];
         var str = this.getLogString(format);
-        if(!str){
+        if (!str) {
             return false;
         }
 
         //debug模式，console.log输出颜色标记的日志
-        if(this.opts['debug'] && this.colors[intLevel]){
-            var color = this.colors[intLevel];
+        if (this.opts['debug'] && COLORS[intLevel]) {
+            var color = COLORS[intLevel];
             var _str = unescape(str);
             console.log(_str[color]);
         }
 
-        var pathname = path.dirname(logFile);
-        fs.exists(pathname, function(exists) {
-            if (!exists) {               
-                mkdirp(pathname, function (err) {
-                    if (err){
-                        //return mail('日志初始化文件夹失败');
-                    }else{
-                        return fs.appendFile(logFile, str, function(err) {
-                            if (err) {
-                                //return mail('日志append失败');
-                            }
-                        });
-                    }
-                });
-            } else {
-                return fs.appendFile(logFile, str, function(err) {
-                    if (err) {
-                        //return mail('日志append失败');
-                    }
-                });
+        if (!LOGFILE_CACHE[logFile]) {
+            // 关闭老的日志流
+            for (var oldFile in LOGFILE_CACHE) {
+                LOGFILE_CACHE[oldFile] = null;
             }
-        });
+            var pathname = path.dirname(logFile);
+            if (!fs.existsSync(pathname)) {
+                mkdirp.sync(pathname);
+            }
+            LOGFILE_CACHE[logFile] = fs.createWriteStream(logFile, {
+                'flags': 'a'
+            });
+        }
+        LOGFILE_CACHE[logFile].write(str);
     },
 
 
     //获取字符串标识对应的日志等级，没有返回-1
-    getLogLevelInt : function(level){
-        var levels = this.levels;
-        for (var num in levels) {
-            if(levels[num] == level){
-                return num;
-            }
-        };
-        return -1;
+    getLogLevelInt: function (level) {
+        return LEVELS_REVERSE[level] || -1;
     },
 
     /**
      * 获取日志字符串，,执行模板函数读取日志数据
      * @return {[type]} [description]
      */
-    getLogString : function(format){
-        if(!format){
+    getLogString: function (format) {
+        if (!format) {
             return false;
         }
-        var _this = this;
-        var md5Str = _this.md5(format);
-        var func = "node_log_" + md5Str;
-        if(_this[func]){
-            return _this[func](util) + "\n";
-        }
-        var dataPath = this.opts['data_path'];
-        if(!fs.existsSync(dataPath)){
-            try{
-                fs.mkdirSync(dataPath);
-            }catch(e){
-                // mail("创建日志文件夹失败")
-            }
-        }
-        var filename = dataPath + "/log/" + md5Str + ".js";
-        
-        //没有模板函数则新生成
-        if(!fs.existsSync(filename)){
-            var time = +new Date();
-            var tempFile = filename +  time + "." + Math.random();
-            if(!fs.existsSync(dataPath + "/log")){
-                try{
-                    fs.mkdirSync(dataPath + "/log");
-                }catch(e){
-                    // mail("创建日志文件夹失败")
-                }
-            }
-            try{
-                var jsStr = _this.parseFormat(format);//获取各个format对应的js执行函数字符串
-                fs.appendFileSync(tempFile,jsStr);
-                fs.renameSync(tempFile,filename);
-            }catch(e){
+        if (!LOGGER_CACHE[format]) {
+            try {
+                var jsStr = this.parseFormat(format); //获取各个format对应的js执行函数字符串
+                LOGGER_CACHE[format] = requireFromString(jsStr);
+            } catch (e) {
+                console.error(e);
                 //mail("生成日志模板js失败");
             }
         }
-        
-        try{
-            var template = require(filename);
-            _this[func] = template[func];
-            return  _this[func](util) + "\n";
-        }catch(e){
-            //console.log(e.stack);
-            return null;
-        }
+        return LOGGER_CACHE[format](this, util) + "\n";
     },
 
 
     //生产环境是否应当使用
-    md5 :  function(data, len){
+    md5: function (data, len) {
         var md5sum = crypto.createHash('md5'),
             encoding = typeof data === 'string' ? 'utf8' : 'binary';
         md5sum.update(data, encoding);
@@ -450,201 +414,206 @@ Logger.prototype = {
     },
 
     //解析日志配置，生成相应的模板函数
-    parseFormat : function(format){
-        var regex = /%(?:{([^}]*)})?(.)/g; 
+    parseFormat: function (format) {
+        var regex = /%(?:{([^}]*)})?(.)/g;
         var m;
         var action = [];
         while ((m = regex.exec(format)) != null) {
             if (m.index === regex.lastIndex) {
                 regex.lastIndex++;
             }
-            var code = m[2],param = m[1];
-            switch(code){
-                case 'h':
-                    action.push("this.getParams('CLIENT_IP')");
+            var code = m[2],
+                param = m[1];
+            switch (code) {
+            case 'h':
+                action.push("logger.getParams('CLIENT_IP')");
+                break;
+            case 't':
+                var _act = "util.strftime(new Date(),'%y-%m-%d %H:%M:%S')";
+                if (param && param != "") {
+                    _act = "util.strftime(new Date(), '" + String(param) + "')";
+                }
+                action.push(_act);
+                break;
+            case 'i':
+                var key = String(param).toUpperCase().replace(/-/g, '_');
+                action.push("logger.getParams('" + key + "')");
+                break;
+            case 'a':
+                action.push("logger.getParams('CLIENT_IP')");
+                break;
+            case 'A':
+                action.push("logger.getParams('SERVER_ADDR')");
+                break;
+            case 'b':
+                action.push("logger.getParams('CONTENT_LENGTH')");
+                break;
+            case 'C':
+                if (param == '') {
+                    action.push("logger.getParams('HTTP_COOKIE')");
+                } else {
+                    action.push("logger.getCookie('" + param + "')");
+                }
+                break;
+            case 'D':
+                //暂不确定计算准确
+                action.push("logger.getParams('REQUEST_TIME')");
+                break;
+            case 'e':
+                //TODO
+                action.push("''");
+                break;
+            case 'f':
+                action.push("logger.getParams('FileName')");
+                break;
+            case 'H':
+                action.push("logger.getParams('SERVER_PROTOCOL')");
+                break;
+            case 'm':
+                action.push("logger.getParams('REQUEST_METHOD')");
+                break;
+            case 'p':
+                action.push("logger.getParams('SERVER_PORT')");
+                break;
+            case 'q':
+                action.push("logger.getParams('QUERY_STRING')");
+                break;
+            case 'T':
+                //TODO
+                action.push("''");
+                break;
+            case 'U':
+                action.push("logger.getParams('REQUEST_URI')");
+                break;
+            case 'v':
+                action.push("logger.getParams('HOSTNAME')");
+                break;
+            case 'V':
+                action.push("logger.getParams('HTTP_HOST')");
+                break;
+            case 'L':
+                action.push("logger.getParams('current_level')");
+                break;
+            case 'N':
+                action.push("logger.getParams('LineNumber')");
+                break;
+            case 'E':
+                action.push("logger.getParams('errno')");
+                break;
+            case 'l':
+                action.push("logger.getParams('LogId')");
+                break;
+            case 'u':
+                //TODO 用户ID 用户名
+                action.push("logger.getParams('user')");
+                break;
+            case 'S':
+                //TODO
+                action.push("''");
+                break;
+            case 'M':
+                action.push("logger.getParams('error_msg')");
+                break;
+            case 'x':
+                //TODO
+                if (param.indexOf("u_") == 0) {
+                    param = param.substr(2);
+                }
+                switch (param) {
+                case 'log_level':
+                    action.push("logger.getParams('current_level')");
                     break;
-                case 't':
-                    var _act =  "util.strftime(new Date(),'%y-%m-%d %H:%M:%S')";
-                    if(param && param!= ""){
-                        _act = "util.strftime(new Date(), '" + String(param) + "')";
-                    }
-                    action.push(_act);
+                case 'line':
+                    action.push("logger.getParams('LineNumber')");
                     break;
-                case 'i':
-                    var key = String(param).toUpperCase().replace(/-/g,'_');
-                    action.push("this.getParams('" + key +"')");
+                case 'function':
+                    action.push("logger.getParams('FunctionName')");
                     break;
-                case 'a':
-                    action.push("this.getParams('CLIENT_IP')");
+                case 'err_no':
+                    action.push("logger.getParams('errno')");
                     break;
-                case 'A':
-                    action.push("this.getParams('SERVER_ADDR')");
+                case 'err_msg':
+                    action.push("logger.getParams('error_msg')");
                     break;
-                case 'b':
-                    action.push("this.getParams('CONTENT_LENGTH')");
+                case 'log_id':
+                    action.push("logger.getParams('LogId')");
                     break;
-                case 'C':
-                    if(param == ''){
-                        action.push("this.getParams('HTTP_COOKIE')");
-                    }else{
-                        action.push("this.getCookie('" + param + "')");                    
-                    }
+                case 'app':
+                    action.push("logger.getLogPrefix()");
                     break;
-                case 'D':
-                    //暂不确定计算准确
-                    action.push("this.getParams('REQUEST_TIME')");
-                    break;
-                case 'e':
-                    //TODO
-                    action.push("''");
-                    break;
-                case 'f':
-                    action.push("this.getParams('FileName')");
-                    break;
-                case 'H':
-                    action.push("this.getParams('SERVER_PROTOCOL')");
-                    break;
-                case 'm':
-                    action.push("this.getParams('REQUEST_METHOD')");
-                    break;
-                case 'p':
-                    action.push("this.getParams('SERVER_PORT')");
-                    break;
-                case 'q':
-                    action.push("this.getParams('QUERY_STRING')");
-                    break;
-                case 'T':
-                    //TODO
-                    action.push("''");
-                    break;
-                case 'U':
-                    action.push("this.getParams('REQUEST_URI')");
-                    break;
-                case 'v':
-                    action.push("this.getParams('HOSTNAME')");
-                    break;
-                case 'V':
-                    action.push("this.getParams('HTTP_HOST')");
-                    break;
-                case 'L':
-                    action.push("this.getParams('current_level')");
-                    break;
-                case 'N':
-                    action.push("this.getParams('LineNumber')");
-                    break;
-                case 'E':
-                    action.push("this.getParams('errno')");
-                    break;
-                case 'l':
-                    action.push("this.getParams('LogId')");
-                    break;
-                case 'u':
-                    //TODO 用户ID 用户名
-                    action.push("this.getParams('user')");
-                    break;
-                case 'S':
-                    //TODO
-                    action.push("''");
-                    break;
-                case 'M':
-                    action.push("this.getParams('error_msg')");
-                    break;
-                case 'x':
-                    //TODO
-                    if(param.indexOf("u_")  == 0 ){
-                        param = param.substr(2);
-                    }
-                    switch(param) {
-                        case 'log_level':
-                            action.push("this.getParams('current_level')");
-                            break;
-                        case 'line':
-                            action.push("this.getParams('LineNumber')");
-                            break;
-                        case 'function':
-                            action.push("this.getParams('FunctionName')");
-                            break;
-                        case 'err_no':
-                            action.push("this.getParams('errno')");
-                            break;
-                        case 'err_msg':
-                            action.push("this.getParams('error_msg')");
-                            break;
-                        case 'log_id':
-                            action.push("this.getParams('LogId')");
-                            break;
-                        case 'app':
-                            action.push("this.getLogPrefix()");
-                            break;
-                        /*case 'function_param':
+                    /*case 'function_param':
                             $action[] = 'Bd_Log::flattenArgs(Bd_Log::$current_instance->current_function_param)';
                             break;*/
-                        /*case 'argv':
+                    /*case 'argv':
                             $action[] = '(isset($GLOBALS["argv"])? Bd_Log::flattenArgs($GLOBALS["argv"]) : \'\')';
                             break;*/
-                        case 'pid':
-                            action.push("this.getParams('pid')");
-                            break;
-                        case 'encoded_str_array':
-                            action.push("this.getParams('encoded_str_array')");
-                            break;
-                        case 'cookie':
-                            action.push("this.getParams('cookie')");
-                            break;
-                        default:
-                            action.push("''");
-                    }
+                case 'pid':
+                    action.push("logger.getParams('pid')");
                     break;
-                case '%':
-                    action.push("'%'");
+                case 'encoded_str_array':
+                    action.push("logger.getParams('encoded_str_array')");
+                    break;
+                case 'cookie':
+                    action.push("logger.getParams('cookie')");
                     break;
                 default:
                     action.push("''");
+                }
+                break;
+            case '%':
+                action.push("'%'");
+                break;
+            default:
+                action.push("''");
             }
         }
 
-        var strformat = util.preg_split(regex,format);
-        var code = "'" +  strformat[0] + "'";
+        var strformat = util.preg_split(regex, format);
+        var code = "'" + strformat[0] + "'";
         for (var i = 1; i < strformat.length; i++) {
-            code = code +  ' + ' + action[i-1] + " + '"  + strformat[i] + "'";           
+            code = code + ' + ' + action[i - 1] + " + '" + strformat[i] + "'";
         };
         var cmt = "/* Used for app " + this.opts['app'] + "\n";
-        cmt += " * Original format string:" + format.replace(/\*\//g,"* /");
+        cmt += " * Original format string:" + format.replace(/\*\//g, "* /");
 
-        var md5Str = this.md5(format);
-        var func = "node_log_" + md5Str;
-        var str = cmt + "*/ \n exports." + func + "=function(util){\n return " + code +"; \n}";
+        var str = cmt + "*/ \n module.exports=function(logger, util){\n return " + code + "; \n}";
         return str;
 
     },
 
-    getParams : function(name){
-        if(this.params.hasOwnProperty(name) && this.params[name]!=undefined && this.params[name]!=""){
+    getParams: function (name) {
+        if (this.params.hasOwnProperty(name) && this.params[name] != undefined && this.params[name] != "") {
             return this.params[name];
         }
-        return  "-";
+        return "-";
     },
 
-    setParams : function(name,value){
+    setParams: function (name, value) {
         this.params[name] = value;
     },
 
-    getCookie : function(name){
-        var name = String(name).replace(/(^\s*)|(\s*$)/g, "");  
+    getCookie: function (name) {
+        var name = String(name).replace(/(^\s*)|(\s*$)/g, "");
         var match = String(this.getParams("COOKIE")).match(new RegExp(name + '=([^;]+)'));
-        if (match){
-           return match[1]; 
-        }         
+        if (match) {
+            return match[1];
+        }
         return false;
     }
 }
 
+function requireFromString(src, filename) {
+    var Module = module.constructor;
+    var m = new Module();
+    m._compile(src, filename);
+    return m.exports;
+}
 
 
-module.exports = function(config){
-    
+module.exports = function (config) {
+
     var config = config || {};
-   /* if (config.mode === 'production') {
+    /* if (config.mode === 'production') {
         process.on('uncaughtException', function(e) {
             if (config.mode === 'production') {
                 console.log(config);
@@ -656,16 +625,16 @@ module.exports = function(config){
 
     return function (req, res, next) {
 
-        function logRequest(){
+        function logRequest() {
             res.removeListener('finish', logRequest);
             res.removeListener('close', logRequest);
             //以下参数需要在response finish的时候计算
             logger.params['STATUS'] = res._header ? res.statusCode : null;
             logger.params['CONTENT_LENGTH'] = (res._headers || {})['content-length'] || "-";
-            if (req._startAt){
+            if (req._startAt) {
                 var diff = process.hrtime(req._startAt);
                 var ms = diff[0] * 1e3 + diff[1] * 1e-6;
-                logger.params['REQUEST_TIME'] =  ms.toFixed(3); 
+                logger.params['REQUEST_TIME'] = ms.toFixed(3);
             };
             //暂时不区分访问错误日志
             logger.log("ACCESS");
@@ -673,47 +642,47 @@ module.exports = function(config){
                 logger.log("ACCESS_ERROR");
             }else{
                 logger.log("ACCESS");
-            } */     
+            } */
         }
 
-        var current = domain.create();   
+        var current = domain.create();
         var logger = new Logger(config);
-        
+
         //只在请求过来的时候才设置LogId
         logger.params['LogId'] = logger.getLogID(req);
-        logger.parseReqParams(req,res);
+        logger.parseReqParams(req, res);
         current.add(logger);
         current.logger = logger; // Add request object to custom property
-        
+
         //response-time启动埋点
         req._startAt = process.hrtime();
         req._startTime = new Date;
 
         res.on('finish', logRequest);
-        res.on('close',  logRequest);
+        res.on('close', logRequest);
 
-        res.on('log',function(e,level){
+        res.on('log', function (e, level) {
             var option = e || {};
-            var level = level ||  "notice";
-            logger.parseReqParams(req,res);
-            logger.log(level,option);
+            var level = level || "notice";
+            logger.parseReqParams(req, res);
+            logger.log(level, option);
         });
 
         //只要url设置了_node_debug参数，则开启debug模式，console.log输出日志
-        if(req.query && req.query._node_debug){
+        if (req.query && req.query._node_debug) {
             logger.opts['debug'] = 1;
         }
-      
+
         current.run(next);
-    }    
+    }
 };
 
 module.exports.Logger = Logger;
 
-module.exports.getLogger = function(config){
-    if(process.domain && process.domain.logger){
+module.exports.getLogger = function (config) {
+    if (process.domain && process.domain.logger) {
         return process.domain.logger;
-    }else{
+    } else {
         return new Logger(config);
-    }       
+    }
 };

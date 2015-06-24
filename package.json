@@ -1,31 +1,31 @@
 {
-  "name": "yog-log",
-  "version": "0.0.16",
-  "description": "yog logger",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/fex-team/yog-log.git"
-  },
-  "dependencies": {
-    "mkdirp": "0.5.0",
-    "stack-trace": "0.0.9",
-    "fast-strftime": "1.1.1",
-    "colors" : "0.6.2"
-  },
-  "keywords": [
-    "fis",
-    "yog",
-    "express",
-    "kraken-js"
-  ],
-  "author": "fansekey",
-  "license": "BSD",
-  "bugs": {
-    "url": "https://github.com/fex-team/yog-log/issues"
-  },
-  "homepage": "https://github.com/fex-team/yog-log"
+    "name": "yog-log",
+    "version": "0.0.17",
+    "description": "yog logger",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/fex-team/yog-log.git"
+    },
+    "dependencies": {
+        "mkdirp": "0.5.0",
+        "stack-trace": "0.0.9",
+        "fast-strftime": "1.1.1",
+        "colors": "0.6.2"
+    },
+    "keywords": [
+        "fis",
+        "yog",
+        "express",
+        "kraken-js"
+    ],
+    "author": "fansekey",
+    "license": "BSD",
+    "bugs": {
+        "url": "https://github.com/fex-team/yog-log/issues"
+    },
+    "homepage": "https://github.com/fex-team/yog-log"
 }

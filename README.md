@@ -134,7 +134,7 @@ res.emit('log',{'stack':e,'errno':120,'msg' :'error happened!'},'warning');
 
 请确保使用快捷方法时名称准确，否则程序将报错。
 
- - fatal   :  logger.fata(obj)
+ - fatal   :  logger.fatal(obj)
  - warning : logger.warning(obj)
  - notice : logger.notice(obj)
  - trace : logger.trace(obj)

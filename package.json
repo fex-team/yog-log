@@ -1,6 +1,6 @@
 {
   "name": "yog-log",
-  "version": "0.0.15",
+  "version": "0.0.18",
   "description": "yog logger",
   "main": "index.js",
   "scripts": {

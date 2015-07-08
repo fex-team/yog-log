@@ -76,9 +76,9 @@ var Logger = function (opts) {
         'ACCESS': '%h - - [%{%d/%b/%Y:%H:%M:%S %Z}t] "%m %U %H/%{http_version}i" %{status}i %b %{Referer}i %{Cookie}i %{User-Agent}i %D',
         'ACCESS_ERROR': '%h - - [%{%d/%b/%Y:%H:%M:%S %Z}t] "%m %U %H/%{http_version}i" %{status}i %b %{Referer}i %{Cookie}i %{User-Agent}i %D',
         'WF': this.opts['format_wf'] ||
-            '%L: %t [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M',
+            '%L: %t [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] custom[%{encoded_str_array}x] %S %M',
         'DEFAULT': this.opts['format'] ||
-            '%L: %t [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M',
+            '%L: %t [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] custom[%{encoded_str_array}x] %S %M',
         'STD': '%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x]',
         'STD_DETAIL': '%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x cookie=%{u_cookie}x]'
     };
@@ -346,6 +346,7 @@ Logger.prototype = {
         }
         //文件后缀
         logFile += filename_suffix;
+        var logFileType = logFile;
         //是否按小时自动切分
         if (this.opts['auto_rotate']) {
             logFile += "." + util.strftime(new Date(), '%Y%m%d%H');
@@ -370,20 +371,30 @@ Logger.prototype = {
             console.log(_str[color]);
         }
 
-        if (!LOGFILE_CACHE[logFile]) {
+        if (!LOGFILE_CACHE[logFileType]) {
+            LOGFILE_CACHE[logFileType] = {};
+        }
+
+        // 获取此类文件的FD缓存
+        var fdCache = LOGFILE_CACHE[logFileType];
+
+        if (!fdCache[logFile]) {
             // 关闭老的日志流
-            for (var oldFile in LOGFILE_CACHE) {
-                LOGFILE_CACHE[oldFile] = null;
+            for (var oldFile in fdCache) {
+                try {
+                    fdCache[oldFile].end();
+                } catch (e) {}
+                delete fdCache[oldFile];
             }
             var pathname = path.dirname(logFile);
             if (!fs.existsSync(pathname)) {
                 mkdirp.sync(pathname);
             }
-            LOGFILE_CACHE[logFile] = fs.createWriteStream(logFile, {
+            fdCache[logFile] = fs.createWriteStream(logFile, {
                 'flags': 'a'
             });
         }
-        LOGFILE_CACHE[logFile].write(str);
+        fdCache[logFile].write(str);
     },
 
 

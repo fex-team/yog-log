@@ -53,7 +53,6 @@ var Logger = function (opts) {
     }
 
     this.opts = this.extend({
-        'app': 'unkown',
         'debug': 0,
         'intLevel': 16,
         'auto_rotate': 1,
@@ -115,7 +114,8 @@ Logger.prototype = {
         if (obj) {
             if (typeof obj == "string") {
                 option['msg'] = obj;
-            } else if (typeof obj == "object") {
+            }
+            else if (typeof obj == "object") {
                 option = obj;
             }
         }
@@ -129,7 +129,8 @@ Logger.prototype = {
 
         if (intLevel == 0 || intLevel == 3) { //访问日志     
             this.writeLog(intLevel, option, format);
-        } else {
+        }
+        else {
             //IS_OMP等于0打印两种格式日志，等于1打印STD日志，等于2打印WF/Default日志
             if (this.opts['IS_OMP'] == 0 || this.opts['IS_OMP'] == 2) {
                 option['filename_suffix'] = "";
@@ -164,9 +165,11 @@ Logger.prototype = {
         // ACCESS为访问格式
         if (level == "ACCESS") {
             format = formats['ACCESS'];
-        } else if (level == "ACCESS_ERROR") {
+        }
+        else if (level == "ACCESS_ERROR") {
             format = formats['ACCESS_ERROR']; //访问错误 404 301等单独存储
-        } else {
+        }
+        else {
             //warning和fatal格式不一样,且单独存储
             if (level == "WARNING" || level == "FATAL") {
                 format = formats['WF'];
@@ -203,7 +206,8 @@ Logger.prototype = {
                 this.params['FileName'] = trace[0].fileName;
                 this.params['LineNumber'] = trace[0].lineNumber;
                 this.params['isNative'] = trace[0].native;
-            } catch (e) {
+            }
+            catch (e) {
                 //this.log('notice','wrong error obj');
             }
         }
@@ -255,10 +259,13 @@ Logger.prototype = {
      * @return {[string]} [description]
      */
     getLogPrefix: function () {
-        if (this.opts['IS_ODP'] == true) {
+        if (this.opts['IS_ODP'] == true && this.opts['app']) {
             return this.opts['app'];
-        } else {
-            //TODO 获取模块名称
+        }
+        else {
+            if (this.opts._req.CURRENT_APP) {
+                return this.opts._req.CURRENT_APP;
+            }
             return 'unknow';
         }
     },
@@ -274,9 +281,11 @@ Logger.prototype = {
         if (req) {
             if (req.headers['HTTP_X_BD_LOGID']) {
                 logId = parseInt(req.headers['HTTP_X_BD_LOGID']);
-            } else if (parseInt(req.query['logid']) > 0) {
+            }
+            else if (parseInt(req.query['logid']) > 0) {
                 logId = parseInt(req.query['logid']);
-            } else if (parseInt(this.getCookie('logid')) > 0) {
+            }
+            else if (parseInt(this.getCookie('logid')) > 0) {
                 logId = parseInt(this.getCookie('logid'));
             }
         }
@@ -395,7 +404,8 @@ Logger.prototype = {
             try {
                 var jsStr = this.parseFormat(format); //获取各个format对应的js执行函数字符串
                 LOGGER_CACHE[format] = requireFromString(jsStr);
-            } catch (e) {
+            }
+            catch (e) {
                 console.error(e);
                 //mail("生成日志模板js失败");
             }
@@ -451,7 +461,8 @@ Logger.prototype = {
             case 'C':
                 if (param == '') {
                     action.push("logger.getParams('HTTP_COOKIE')");
-                } else {
+                }
+                else {
                     action.push("logger.getCookie('" + param + "')");
                 }
                 break;
@@ -646,6 +657,7 @@ module.exports = function (config) {
         }
 
         var current = domain.create();
+        config._req = req;
         var logger = new Logger(config);
 
         //只在请求过来的时候才设置LogId
@@ -664,7 +676,7 @@ module.exports = function (config) {
         res.on('log', function (e, level) {
             var option = e || {};
             var level = level || "notice";
-            logger.parseReqParams(req, res);
+            // logger.parseReqParams(req, res);
             logger.log(level, option);
         });
 
@@ -682,7 +694,8 @@ module.exports.Logger = Logger;
 module.exports.getLogger = function (config) {
     if (process.domain && process.domain.logger) {
         return process.domain.logger;
-    } else {
+    }
+    else {
         return new Logger(config);
     }
 };

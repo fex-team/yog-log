@@ -259,13 +259,13 @@ Logger.prototype = {
      * @return {[string]} [description]
      */
     getLogPrefix: function () {
-        if (this.opts['IS_ODP'] == true && this.opts['app']) {
+        if (this.opts.autoAppName && this.opts._req.CURRENT_APP) {
+            return this.opts._req.CURRENT_APP;
+        }
+        if (this.opts['IS_ODP'] == true) {
             return this.opts['app'];
         }
         else {
-            if (this.opts._req.CURRENT_APP) {
-                return this.opts._req.CURRENT_APP;
-            }
             return 'unknow';
         }
     },
@@ -299,7 +299,7 @@ Logger.prototype = {
 
     //获取日志文件地址。注意访问日志与应用日志的差异
     getLogFile: function (intLevel) {
-        var prefix = this.getLogPrefix();
+        var prefix = this.getLogPrefix() || 'yog';
         var logFile = "",
             log_path = "";
         switch (intLevel) {
@@ -314,7 +314,7 @@ Logger.prototype = {
         default: //错误日志为app前缀
             //是否使用子目录，app区分
             log_path = this.opts['use_sub_dir'] ?
-                (this.opts['log_path'] + "/" + this.opts['app']) : this.opts['log_path'];
+                (this.opts['log_path'] + "/" + prefix) : this.opts['log_path'];
             logFile = prefix;
         }
 
@@ -383,7 +383,8 @@ Logger.prototype = {
             for (var oldFile in fdCache) {
                 try {
                     fdCache[oldFile].end();
-                } catch (e) {}
+                }
+                catch (e) {}
                 delete fdCache[oldFile];
             }
             var pathname = path.dirname(logFile);

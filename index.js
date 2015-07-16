@@ -259,7 +259,7 @@ Logger.prototype = {
      * @return {[string]} [description]
      */
     getLogPrefix: function () {
-        if (this.opts.autoAppName && this.opts._req.CURRENT_APP) {
+        if (this.opts.autoAppName && this.opts._req && this.opts._req.CURRENT_APP) {
             return this.opts._req.CURRENT_APP;
         }
         if (this.opts['IS_ODP'] == true) {

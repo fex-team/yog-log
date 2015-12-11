@@ -382,11 +382,13 @@ Logger.prototype = {
         if (!fdCache[logFile]) {
             // 关闭老的日志流
             for (var oldFile in fdCache) {
-                try {
-                    fdCache[oldFile].end();
+                if (fdCache.hasOwnProperty(oldFile)) {
+                    try {
+                        fdCache[oldFile].end();
+                    }
+                    catch (e) {}
+                    delete fdCache[oldFile];
                 }
-                catch (e) {}
-                delete fdCache[oldFile];
             }
             var pathname = path.dirname(logFile);
             if (!fs.existsSync(pathname)) {

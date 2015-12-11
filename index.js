@@ -5,11 +5,11 @@ var fs = require('fs'),
 
 var util = require('./lib/util.js'),
     stackTrace = require('stack-trace'),
-    colors = require('colors'),
+    // colors = require('colors'),
     mkdirp = require('mkdirp');
 
-var data_path = __dirname + "/"; //模板地址默认在模块里
-var log_path = __dirname + "/log";
+var data_path = __dirname + '/'; //模板地址默认在模块里
+var log_path = __dirname + '/log';
 var LOGGER_CACHE = {};
 var LOGFILE_CACHE = {};
 
@@ -29,7 +29,9 @@ var LEVELS = {
 var LEVELS_REVERSE = {};
 
 for (var num in LEVELS) {
-    LEVELS_REVERSE[LEVELS[num]] = num;
+    if (LEVELS_REVERSE.hasOwnProperty(num)) {
+        LEVELS_REVERSE[LEVELS[num]] = num;
+    }
 }
 
 //debug模式下应用日志等级对应的颜色
@@ -60,9 +62,9 @@ var Logger = function (opts) {
         'IS_ODP': true,
         'IS_OMP': 0,
         'log_path': log_path,
-        'access_log_path': log_path + "/access",
-        'access_error_log_path': log_path + "/access",
-        'data_path': data_path + "data"
+        'access_log_path': log_path + '/access',
+        'access_error_log_path': log_path + '/access',
+        'data_path': data_path + 'data'
     }, opts);
 
     //保存一次错误及请求的详情信息
@@ -83,7 +85,7 @@ var Logger = function (opts) {
         'STD_DETAIL': '%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x cookie=%{u_cookie}x]'
     };
 
-}
+};
 
 
 Logger.prototype = {
@@ -104,7 +106,7 @@ Logger.prototype = {
     },
     //level表示日志I等级，obj表示错误消息或者错误选项
     log: function (level, obj) {
-        var level = String(level).toUpperCase(); // WARNING格式
+        level = String(level).toUpperCase(); // WARNING格式
         var intLevel = this.getLogLevelInt(level); // 2格式
         var format = this.getLogFormat(level);
         if (intLevel < 0 || !format) {
@@ -112,34 +114,34 @@ Logger.prototype = {
         }
         var option = {};
         if (obj) {
-            if (typeof obj == "string") {
+            if (typeof obj === 'string') {
                 option['msg'] = obj;
             }
-            else if (typeof obj == "object") {
+            else if (typeof obj === 'object') {
                 option = obj;
             }
         }
         //解析错误堆栈信息
         this.parseStackInfo(option);
         //解析自定义字段，存放在对应ODP的 encoded_str_array中
-        this.params['encoded_str_array'] = "";
+        this.params['encoded_str_array'] = '';
         if (option['custom']) {
             this.parseCustomLog(option['custom']);
         }
 
-        if (intLevel == 0 || intLevel == 3) { //访问日志     
+        if (intLevel === 0 || intLevel === 3) { //访问日志
             this.writeLog(intLevel, option, format);
         }
         else {
             //IS_OMP等于0打印两种格式日志，等于1打印STD日志，等于2打印WF/Default日志
-            if (this.opts['IS_OMP'] == 0 || this.opts['IS_OMP'] == 2) {
-                option['filename_suffix'] = "";
+            if (this.opts['IS_OMP'] === 0 || this.opts['IS_OMP'] === 2) {
+                option['filename_suffix'] = '';
                 option['escape_msg'] = false; //错误消息不转义
                 this.writeLog(intLevel, option, format);
             }
 
-            if (this.opts['IS_OMP'] == 0 || this.opts['IS_OMP'] == 1) {
-                option['filename_suffix'] = ".new";
+            if (this.opts['IS_OMP'] === 0 || this.opts['IS_OMP'] === 1) {
+                option['filename_suffix'] = '.new';
                 option['escape_msg'] = true; //错误消息转义
                 this.writeLog(intLevel, option, this.format['STD']);
             }
@@ -150,7 +152,9 @@ Logger.prototype = {
 
     extend: function (destination, source) {
         for (var property in source) {
-            destination[property] = source[property];
+            if (source.hasOwnProperty(property)) {
+                destination[property] = source[property];
+            }
         }
         return destination;
     },
@@ -163,15 +167,15 @@ Logger.prototype = {
         }
         var format = formats['DEFAULT']; //默认格式，
         // ACCESS为访问格式
-        if (level == "ACCESS") {
+        if (level === 'ACCESS') {
             format = formats['ACCESS'];
         }
-        else if (level == "ACCESS_ERROR") {
+        else if (level === 'ACCESS_ERROR') {
             format = formats['ACCESS_ERROR']; //访问错误 404 301等单独存储
         }
         else {
             //warning和fatal格式不一样,且单独存储
-            if (level == "WARNING" || level == "FATAL") {
+            if (level === 'WARNING' || level === 'FATAL') {
                 format = formats['WF'];
             }
         }
@@ -186,18 +190,18 @@ Logger.prototype = {
      */
     parseStackInfo: function (option) {
         this.params['errno'] = option['errno'] || 0; //错误号
-        this.params['error_msg'] = option['msg'] || ""; //自定义错误信息,%M默认不转义
-        this.params['TypeName'] = "";
-        this.params['FunctionName'] = "";
-        this.params['MethodName'] = "";
-        this.params['FileName'] = "";
-        this.params['LineNumber'] = "";
-        this.params['isNative'] = "";
+        this.params['error_msg'] = option['msg'] || ''; //自定义错误信息,%M默认不转义
+        this.params['TypeName'] = '';
+        this.params['FunctionName'] = '';
+        this.params['MethodName'] = '';
+        this.params['FileName'] = '';
+        this.params['LineNumber'] = '';
+        this.params['isNative'] = '';
         if (option['stack']) {
             try {
                 if (!option['msg']) {
                     this.params['error_msg'] = this.opts['debug'] ? option['stack'] : String(option['stack']).replace(
-                        /(\n)+|(\r\n)+/g, " ");
+                        /(\n)+|(\r\n)+/g, ' ');
                 }
                 var trace = stackTrace.parse(option['stack']);
                 this.params['TypeName'] = trace[0].typeName;
@@ -215,17 +219,17 @@ Logger.prototype = {
 
     //解析自定义字段，'custom'字段
     parseCustomLog: function (obj) {
-        if ("object" != typeof (obj)) {
+        if ('object' !== typeof (obj)) {
             return false;
         }
         var items = [];
         for (var key in obj) {
             if (obj.hasOwnProperty(key)) {
-                items.push(escape(key) + "=" + escape(obj[key]));
+                items.push(escape(key) + '=' + escape(obj[key]));
             }
         }
         if (items.length > 0) {
-            this.params['encoded_str_array'] = items.join(" ");
+            this.params['encoded_str_array'] = items.join(' ');
         }
     },
 
@@ -241,15 +245,15 @@ Logger.prototype = {
         this.params['USER_AGENT'] = req.headers['user-agent'];
         this.params['SERVER_ADDR'] = req.headers.host;
         this.params['SERVER_PROTOCOL'] = String(req.protocol).toUpperCase();
-        this.params['REQUEST_METHOD'] = req.method || "";
-        this.params['SERVER_PORT'] = req.app.settings ? req.app.settings.port : "";
+        this.params['REQUEST_METHOD'] = req.method || '';
+        this.params['SERVER_PORT'] = req.app.settings ? req.app.settings.port : '';
         this.params['QUERY_STRING'] = req.query;
         this.params['REQUEST_URI'] = req.originalUrl;
         this.params['HOSTNAME'] = req.hostname;
         this.params['HTTP_HOST'] = req.headers.host;
         this.params['HTTP_VERSION'] = req.httpVersionMajor + '.' + req.httpVersionMinor;
         this.params['STATUS'] = res._header ? res.statusCode : null;
-        this.params['CONTENT_LENGTH'] = (res._headers || {})['content-length'] || "-";
+        this.params['CONTENT_LENGTH'] = (res._headers || {})['content-length'] || '-';
 
         this.params['pid'] = process.pid;
     },
@@ -262,12 +266,10 @@ Logger.prototype = {
         if (this.opts.autoAppName && this.opts._req && this.opts._req.CURRENT_APP) {
             return this.opts._req.CURRENT_APP;
         }
-        if (this.opts['IS_ODP'] == true) {
+        if (this.opts['IS_ODP'] === true) {
             return this.opts['app'];
         }
-        else {
-            return 'unknow';
-        }
+        return 'unknow';
     },
 
     //获取logID，如果没有生成唯一随机数
@@ -280,19 +282,19 @@ Logger.prototype = {
 
         if (req) {
             if (req.headers['HTTP_X_BD_LOGID']) {
-                logId = parseInt(req.headers['HTTP_X_BD_LOGID']);
+                logId = parseInt(req.headers['HTTP_X_BD_LOGID'], 10);
             }
-            else if (parseInt(req.query['logid']) > 0) {
-                logId = parseInt(req.query['logid']);
+            else if (parseInt(req.query['logid'], 10) > 0) {
+                logId = parseInt(req.query['logid'], 10);
             }
-            else if (parseInt(this.getCookie('logid')) > 0) {
-                logId = parseInt(this.getCookie('logid'));
+            else if (parseInt(this.getCookie('logid'), 10) > 0) {
+                logId = parseInt(this.getCookie('logid'), 10);
             }
         }
 
-        if (logId == 0) {
+        if (logId === 0) {
             var obj = util.gettimeofday();
-            logId = ((obj['sec'] * 100000 + obj['usec'] / 10 + parseInt(Math.random() * 100)) & 0x7FFFFFFF);
+            logId = ((obj['sec'] * 100000 + obj['usec'] / 10 + Math.floor(Math.random() * 100) & 0x7FFFFFFF));
         }
         return logId;
     },
@@ -300,25 +302,24 @@ Logger.prototype = {
     //获取日志文件地址。注意访问日志与应用日志的差异
     getLogFile: function (intLevel) {
         var prefix = this.getLogPrefix() || 'yog';
-        var logFile = "",
-            log_path = "";
+        var logFile = '',
+            log_path = '';
         switch (intLevel) {
         case '0': //访问日志前缀默认access
-            logFile = this.opts['access_log_file'] || "access"; //访问日志
+            logFile = this.opts['access_log_file'] || 'access'; //访问日志
             log_path = this.opts['access_log_path'] || this.opts['log_path'];
             break;
         case '3':
-            logFile = this.opts['access_error_log_file'] || "error"; //访问日志
+            logFile = this.opts['access_error_log_file'] || 'error'; //访问日志
             log_path = this.opts['access_error_log_path'] || this.opts['log_path'];
             break;
         default: //错误日志为app前缀
             //是否使用子目录，app区分
-            log_path = this.opts['use_sub_dir'] ?
-                (this.opts['log_path'] + "/" + prefix) : this.opts['log_path'];
+            log_path = this.opts['use_sub_dir'] ? (this.opts['log_path'] + '/' + prefix) : this.opts['log_path'];
             logFile = prefix;
         }
 
-        return log_path + "/" + logFile + ".log";
+        return log_path + '/' + logFile + '.log';
     },
 
     /**
@@ -338,18 +339,18 @@ Logger.prototype = {
 
         //日志文件名称
         var logFile = this.getLogFile(intLevel),
-            filename_suffix = options['filename_suffix'] || "",
+            filename_suffix = options['filename_suffix'] || '',
             errno = options['errno'] || 0;
 
-        if (this.getLogLevelInt('WARNING') == intLevel || this.getLogLevelInt('FATAL') == intLevel) {
-            logFile += ".wf";
+        if (this.getLogLevelInt('WARNING') === intLevel || this.getLogLevelInt('FATAL') === intLevel) {
+            logFile += '.wf';
         }
         //文件后缀
         logFile += filename_suffix;
         var logFileType = logFile;
         //是否按小时自动切分
         if (this.opts['auto_rotate']) {
-            logFile += "." + util.strftime(new Date(), '%Y%m%d%H');
+            logFile += '.' + util.strftime(new Date(), '%Y%m%d%H');
         }
 
         //STD日志需将错误日志转义
@@ -422,7 +423,7 @@ Logger.prototype = {
                 //mail("生成日志模板js失败");
             }
         }
-        return LOGGER_CACHE[format](this, util) + "\n";
+        return LOGGER_CACHE[format](this, util) + '\n';
     },
 
 
@@ -452,7 +453,7 @@ Logger.prototype = {
                 break;
             case 't':
                 var _act = "util.strftime(new Date(),'%y-%m-%d %H:%M:%S')";
-                if (param && param != "") {
+                if (param && param !== '') {
                     _act = "util.strftime(new Date(), '" + String(param) + "')";
                 }
                 action.push(_act);
@@ -471,7 +472,7 @@ Logger.prototype = {
                 action.push("logger.getParams('CONTENT_LENGTH')");
                 break;
             case 'C':
-                if (param == '') {
+                if (param === '') {
                     action.push("logger.getParams('HTTP_COOKIE')");
                 }
                 else {
@@ -592,23 +593,23 @@ Logger.prototype = {
         }
 
         var strformat = util.preg_split(regex, format);
-        var code = "'" + strformat[0] + "'";
+        var logCode = "'" + strformat[0] + "'";
         for (var i = 1; i < strformat.length; i++) {
-            code = code + ' + ' + action[i - 1] + " + '" + strformat[i] + "'";
-        };
-        var cmt = "/* Used for app " + this.opts['app'] + "\n";
-        cmt += " * Original format string:" + format.replace(/\*\//g, "* /");
+            logCode = logCode + ' + ' + action[i - 1] + " + '" + strformat[i] + "'";
+        }
+        var cmt = '/* Used for app ' + this.opts['app'] + '\n';
+        cmt += ' * Original format string:' + format.replace(/\*\//g, '* /');
 
-        var str = cmt + "*/ \n module.exports=function(logger, util){\n return " + code + "; \n}";
+        var str = cmt + '*/ \n module.exports=function(logger, util){\n return ' + logCode + '; \n}';
         return str;
 
     },
 
     getParams: function (name) {
-        if (this.params.hasOwnProperty(name) && this.params[name] != undefined && this.params[name] != "") {
+        if (this.params.hasOwnProperty(name) && this.params[name] !== undefined && this.params[name] !== "") {
             return this.params[name];
         }
-        return "-";
+        return '-';
     },
 
     setParams: function (name, value) {
@@ -616,14 +617,14 @@ Logger.prototype = {
     },
 
     getCookie: function (name) {
-        var name = String(name).replace(/(^\s*)|(\s*$)/g, "");
-        var match = String(this.getParams("COOKIE")).match(new RegExp(name + '=([^;]+)'));
+        name = String(name).replace(/(^\s*)|(\s*$)/g, '');
+        var match = String(this.getParams('COOKIE')).match(new RegExp(name + '=([^;]+)'));
         if (match) {
             return match[1];
         }
         return false;
     }
-}
+};
 
 function requireFromString(src, filename) {
     var Module = module.constructor;
@@ -635,59 +636,46 @@ function requireFromString(src, filename) {
 
 module.exports = function (config) {
 
-    var config = config || {};
-    /* if (config.mode === 'production') {
-        process.on('uncaughtException', function(e) {
-            if (config.mode === 'production') {
-                console.log(config);
-                logger.log("error2", e,"fatal");
-                return process.exit(1);
-            }
-        });
-    }*/
+    config = config || {};
 
     return function (req, res, next) {
+        var current;
+        var logger;
+        current = domain.create();
+        logger = new Logger(config);
+        config._req = req;
+        current.add(logger);
+        current.logger = logger; // Add request object to custom property
 
         function logRequest() {
             res.removeListener('finish', logRequest);
             res.removeListener('close', logRequest);
             //以下参数需要在response finish的时候计算
             logger.params['STATUS'] = res._header ? res.statusCode : null;
-            logger.params['CONTENT_LENGTH'] = (res._headers || {})['content-length'] || "-";
+            logger.params['CONTENT_LENGTH'] = (res._headers || {})['content-length'] || '-';
             if (req._startAt) {
                 var diff = process.hrtime(req._startAt);
                 var ms = diff[0] * 1e3 + diff[1] * 1e-6;
                 logger.params['REQUEST_TIME'] = ms.toFixed(3);
-            };
-            //暂时不区分访问错误日志
-            logger.log("ACCESS");
-            /*if(res.statusCode == '301' || res.statusCode == '404'){
-                logger.log("ACCESS_ERROR");
-            }else{
-                logger.log("ACCESS");
-            } */
+            }
+            //不区分访问错误日志
+            logger.log('ACCESS');
         }
 
-        var current = domain.create();
-        config._req = req;
-        var logger = new Logger(config);
 
         //只在请求过来的时候才设置LogId
         logger.params['LogId'] = logger.getLogID(req);
         logger.parseReqParams(req, res);
-        current.add(logger);
-        current.logger = logger; // Add request object to custom property
 
         //response-time启动埋点
         req._startAt = process.hrtime();
-        req._startTime = new Date;
 
-        res.on('finish', logRequest);
-        res.on('close', logRequest);
+        res.once('finish', logRequest);
+        res.once('close', logRequest);
 
         res.on('log', function (e, level) {
             var option = e || {};
-            var level = level || "notice";
+            level = level || 'notice';
             // logger.parseReqParams(req, res);
             logger.log(level, option);
         });
@@ -698,7 +686,7 @@ module.exports = function (config) {
         }
 
         current.run(next);
-    }
+    };
 };
 
 module.exports.Logger = Logger;
@@ -707,7 +695,5 @@ module.exports.getLogger = function (config) {
     if (process.domain && process.domain.logger) {
         return process.domain.logger;
     }
-    else {
-        return new Logger(config);
-    }
+    return new Logger(config);
 };

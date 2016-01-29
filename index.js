@@ -271,7 +271,7 @@ Logger.prototype = {
     },
 
     //获取logID，如果没有生成唯一随机数
-    getLogID: function (req) {
+    getLogID: function (req, logIDName) {
         var logId = 0;
 
         if (this.params['LogId']) {
@@ -279,8 +279,8 @@ Logger.prototype = {
         }
 
         if (req) {
-            if (req.headers['HTTP_X_BD_LOGID']) {
-                logId = parseInt(req.headers['HTTP_X_BD_LOGID']);
+            if (req.headers[logIDName || 'http_x_bd_logid']) {
+                logId = parseInt(req.headers[logIDName || 'http_x_bd_logid']);
             }
             else if (parseInt(req.query['logid']) > 0) {
                 logId = parseInt(req.query['logid']);

@@ -29,9 +29,7 @@ var LEVELS = {
 var LEVELS_REVERSE = {};
 
 for (var num in LEVELS) {
-    if (LEVELS_REVERSE.hasOwnProperty(num)) {
-        LEVELS_REVERSE[LEVELS[num]] = num;
-    }
+    LEVELS_REVERSE[LEVELS[num]] = num;
 }
 
 //debug模式下应用日志等级对应的颜色

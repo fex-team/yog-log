@@ -279,8 +279,8 @@ Logger.prototype = {
         }
 
         if (req) {
-            if (req.headers[logIDName || 'http_x_bd_logid']) {
-                logId = parseInt(req.headers[logIDName || 'http_x_bd_logid'], 10);
+            if (req.headers[logIDName]) {
+                logId = parseInt(req.headers[logIDName], 10);
             }
             else if (parseInt(req.query['logid'], 10) > 0) {
                 logId = parseInt(req.query['logid'], 10);
@@ -664,7 +664,7 @@ module.exports = function (config) {
 
 
         //只在请求过来的时候才设置LogId
-        logger.params['LogId'] = logger.getLogID(req);
+        logger.params['LogId'] = logger.getLogID(req, config.LogIdName || 'x_bd_logid');
         logger.parseReqParams(req, res);
 
         //response-time启动埋点

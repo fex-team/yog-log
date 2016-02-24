@@ -41,7 +41,7 @@ var COLORS = {
     16: 'blue'
 };
 
-var Logger = function (opts) {
+var Logger = function (opts, req) {
     //模板文件地址，可以不填
     if (opts && opts['data_path']) {
         data_path = opts['data_path'];
@@ -51,6 +51,10 @@ var Logger = function (opts) {
     if (opts && opts['log_path']) {
         log_path = opts['log_path'];
     }
+
+    this.req = req || {
+        headers: {}
+    };
 
     this.opts = this.extend({
         'debug': 0,
@@ -261,8 +265,8 @@ Logger.prototype = {
      * @return {[string]} [description]
      */
     getLogPrefix: function () {
-        if (this.opts.autoAppName && this.opts._req && this.opts._req.CURRENT_APP) {
-            return this.opts._req.CURRENT_APP;
+        if (this.opts.autoAppName && this.req && this.req.CURRENT_APP) {
+            return this.req.CURRENT_APP;
         }
         if (this.opts['IS_ODP'] === true) {
             return this.opts['app'];
@@ -642,8 +646,7 @@ module.exports = function (config) {
         var current;
         var logger;
         current = domain.create();
-        logger = new Logger(config);
-        config._req = req;
+        logger = new Logger(config, req);
         current.add(logger);
         current.logger = logger; // Add request object to custom property
 

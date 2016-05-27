@@ -86,7 +86,7 @@ use_sub_dir	| 1	| 日志是否在二级目录打印，目录名为 `APP_NAME`
 log_path	| 插件安装地址/log	| 日志存放目录，注意需要设置
 data_path	| 插件安装地址/data	| 格式数据存放的目录，可不用设置
 IS_OMP		| 0	| 是否开启omp日志，如果不接入omp，建议置为2
-debug     | 0 | 是否开启omp日志，如果不接入omp，建议置为2
+debug     | 0 | 是否使用debug模式直接在控制台输出日志
 
 ```
 

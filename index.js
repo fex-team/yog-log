@@ -5,7 +5,7 @@ var fs = require('fs'),
 
 var util = require('./lib/util.js'),
     stackTrace = require('stack-trace'),
-    // colors = require('colors'),
+    colors = require('colors'),
     mkdirp = require('mkdirp');
 
 var data_path = __dirname + '/'; //模板地址默认在模块里

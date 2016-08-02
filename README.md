@@ -22,44 +22,23 @@
 
 ## 快速开始
 
-### 1 在yog的config.json中添加此配置
+### 1 初始化配置
+```
+var YLogger = require('yog-log');
+var path = require('path');
 
-```javascript
-  "yogLogger": {
-            "enabled": true,
-            "priority": 50,
-            "module": {
-                "name": "yog-log",
-                "arguments": [
-                    {
-                        "intLevel" : 16, //线上一般填4，参见配置项说明
-                        "app": "app_name", //app名称，产品线或项目名称等
-                        "log_path": "path:./data/log"//日志存放地址
-                    }
-             ]
-      }
- }
+var conf = {
+  app: 'yog', //app名称，产品线或项目名称等
+  log_path: path.join(__dirname, 'log'), //日志存放地址
+  intLevel: 16 //线上一般填4，参见配置项说明
+}
+
+app.use(YLogger(conf));
 ```
 
 填写此配置之后yog-log就开始统计访问日志。
 
 ### 2 调用接口统计应用日志
-
-**router层统计日志**
-
-router层推荐使用emit方式触发log事件，避免在每个文件中都require yog-log
-
-```
-try{
-    //do something
-}catch(e){
-    res.emit('log',{'stack':e,'errno':120,'msg' :'error happened!'}, 'warning'); //推荐方式
-    //or res.emit('log',{'stack':e});//日志等级不写默认为notice
-    //or res.emit('log','error!');//只写字符串不会解析错误堆栈
-}
-```
-
-**model等没有res的地方**
 
 使用`getLogger`方法获取到日志模块实例，然后调用接口统计日志。
 
@@ -67,7 +46,6 @@ try{
 var YLogger = require('yog-log');
 var logger = YLogger.getLogger(); //默认通过domain获取，单独使用请传递config
 logger.log('warning','msg');//or logger.warning('msg');
-
 ```
 
 

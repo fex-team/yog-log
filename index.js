@@ -256,7 +256,7 @@ Logger.prototype = {
         this.params['HTTP_VERSION'] = req.httpVersionMajor + '.' + req.httpVersionMinor;
         this.params['STATUS'] = res._header ? res.statusCode : null;
         this.params['CONTENT_LENGTH'] = (res._headers || {})['content-length'] || '-';
-
+        this.params['HEADERS'] = req.headers;
         this.params['pid'] = process.pid;
     },
 
@@ -612,6 +612,10 @@ Logger.prototype = {
     getParams: function (name) {
         if (this.params.hasOwnProperty(name) && this.params[name] !== undefined && this.params[name] !== "") {
             return this.params[name];
+        }
+        name = name.toLowerCase();
+        if (this.params.HEADERS && this.params.HEADERS.hasOwnProperty(name) && this.params.HEADERS[name]) {
+            return this.params.HEADERS[name];
         }
         return '-';
     },

@@ -77,7 +77,7 @@ var Logger = function (opts, req) {
     //[10/Jun/2014:22:01:35 +0800]
     //应用日志格式，默认wf日志与default日志一样
     this.format = {
-        'ACCESS': '%h - - [%{%d/%b/%Y:%H:%M:%S %Z}t] "%m %U %H/%{http_version}i" %{status}i %b %{Referer}i %{Cookie}i %{User-Agent}i %D',
+        'ACCESS': this.opts['access'] || '%h - - [%{%d/%b/%Y:%H:%M:%S %Z}t] "%m %U %H/%{http_version}i" %{status}i %b %{Referer}i %{Cookie}i %{User-Agent}i %D',
         'ACCESS_ERROR': '%h - - [%{%d/%b/%Y:%H:%M:%S %Z}t] "%m %U %H/%{http_version}i" %{status}i %b %{Referer}i %{Cookie}i %{User-Agent}i %D',
         'WF': this.opts['format_wf'] ||
             '%L: %t [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] custom[%{encoded_str_array}x] %S %M',

@@ -251,11 +251,14 @@ Logger.prototype = {
         this.params['SERVER_PORT'] = req.app.settings ? req.app.settings.port : '';
         this.params['QUERY_STRING'] = req.query;
         this.params['REQUEST_URI'] = req.originalUrl;
+        this.params['REQUEST_PATHNAME'] = req._parsedUrl ? req._parsedUrl.pathname : '-';
+        this.params['REQUEST_QUERY'] = req._parsedUrl ? req._parsedUrl.query : '-';
         this.params['HOSTNAME'] = req.hostname;
         this.params['HTTP_HOST'] = req.headers.host;
         this.params['HTTP_VERSION'] = req.httpVersionMajor + '.' + req.httpVersionMinor;
         this.params['STATUS'] = res._header ? res.statusCode : null;
         this.params['CONTENT_LENGTH'] = (res._headers || {})['content-length'] || '-';
+        this.params['BYTES_SENT'] = res.socke ? res.socket.bytesRead : 0;
         this.params['HEADERS'] = req.headers;
         this.params['pid'] = process.pid;
     },

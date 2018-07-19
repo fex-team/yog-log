@@ -258,7 +258,7 @@ Logger.prototype = {
         this.params['HTTP_VERSION'] = req.httpVersionMajor + '.' + req.httpVersionMinor;
         this.params['STATUS'] = res._header ? res.statusCode : null;
         this.params['CONTENT_LENGTH'] = (res._headers || {})['content-length'] || '-';
-        this.params['BYTES_SENT'] = res.socke ? res.socket.bytesRead : 0;
+        this.params['BYTES_SENT'] = res.socket ? res.socket.bytesRead : 0;
         this.params['HEADERS'] = req.headers;
         this.params['pid'] = process.pid;
     },

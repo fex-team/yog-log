@@ -1,6 +1,7 @@
 var fs = require('fs'),
     path = require('path'),
     domain = require('domain'),
+    url = require('url'),
     crypto = require('crypto');
 
 var util = require('./lib/util.js'),
@@ -249,7 +250,7 @@ Logger.prototype = {
         this.params['SERVER_PROTOCOL'] = String(req.protocol).toUpperCase();
         this.params['REQUEST_METHOD'] = req.method || '';
         this.params['SERVER_PORT'] = req.app.settings ? req.app.settings.port : '';
-        this.params['QUERY_STRING'] = req.query;
+        this.params['QUERY_STRING'] = this.getQueryString(req.originalUrl);
         this.params['REQUEST_URI'] = req.originalUrl;
         this.params['REQUEST_PATHNAME'] = req._parsedUrl ? req._parsedUrl.pathname : '-';
         this.params['REQUEST_QUERY'] = req._parsedUrl ? req._parsedUrl.query : '-';
@@ -261,6 +262,23 @@ Logger.prototype = {
         this.params['BYTES_SENT'] = res.socket ? res.socket.bytesRead : 0;
         this.params['HEADERS'] = req.headers;
         this.params['pid'] = process.pid;
+    },
+
+    /**
+     * 获取请求的querystring
+     *
+     * @param {string} url 请求 url
+     * @return {string} querystring
+     */
+    getQueryString(rawUrl) {
+        try {
+            var urlObj = url.parse(rawUrl);
+            return urlObj.query || '';
+        }
+        catch (e) {
+            console.log(e);
+        }
+        return '';
     },
 
     /**

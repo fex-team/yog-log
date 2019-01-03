@@ -487,6 +487,10 @@ Logger.prototype = {
                 var key = String(param).toUpperCase().replace(/-/g, '_');
                 action.push("logger.getParams('" + key + "')");
                 break;
+            // 不转换参数格式, 方便获取自定义 header 参数
+            case 'I':
+                action.push("logger.getParams('" + param + "')");
+                break;
             case 'a':
                 action.push("logger.getParams('CLIENT_IP')");
                 break;

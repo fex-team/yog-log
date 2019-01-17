@@ -72,7 +72,7 @@ debug     | 0 | 是否使用debug模式直接在控制台输出日志
 %L: %t [%f:%N] errno[%E] logId[%l] uri[%U] user[%u] refer[%{referer}i] cookie[%{cookie}i] %S %M
 
 默认的`format_wf `：
-%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x] 
+%L: %{%m-%d %H:%M:%S}t %{app}x * %{pid}x [logid=%l filename=%f lineno=%N errno=%{err_no}x %{encoded_str_array}x errmsg=%{u_err_msg}x]
 
 ```
 
@@ -84,12 +84,12 @@ debug     | 0 | 是否使用debug模式直接在控制台输出日志
 | WARNING     |     2       | 打印FATAL和WARNING |
 | NOTICE      |     4      | 打印FATAL、WARNING、NOTICE（线上程序正常运行时的配置） |
 | TRACE       |    8      | 打印FATAL、WARNING、NOTICE、TRACE（线上程序异常时使用该配置）|
-| DEBUG       |   16       | 打印FATAL、WARNING、NOTICE、TRACE、DEBUG（测试环境配 | 
+| DEBUG       |   16       | 打印FATAL、WARNING、NOTICE、TRACE、DEBUG（测试环境配 |
 
 ## response.emit(name,obj,level)
 
 在router层使用emit方式可以避免每个文件都引入logger和获取实例。参数说明：
- 
+
   - name ：日志事件名称，固定为'log'
   - obj： string或者object格式。如果是string，认为是错误消息。如果是object，请认为是详细信息。正确格式为{'stack':e,'msg':'msg','errno':'010'}，分别代表`错误堆栈`、`错误消息`、`错误码`。错误消息如果不填将使用错误堆栈的消息。
   - level ： 日志等级字符串，见上。不区分大小写，不写默认为notice
@@ -97,7 +97,7 @@ debug     | 0 | 是否使用debug模式直接在控制台输出日志
 如下所示：
 
 ```javascript
-res.emit('log',{'stack':e,'errno':120,'msg' :'error happened!'},'warning'); 
+res.emit('log',{'stack':e,'errno':120,'msg' :'error happened!'},'warning');
 ```
 
 ## getLogger(config)
@@ -131,7 +131,7 @@ res.emit('log',{'stack':e,'errno':120,'msg' :'error happened!'},'warning');
    'errno':120,  //错误码
    'msg' :'error happened!',  //错误消息
    'custom':{'key1' :'value1','key2':'value2'} //自定义消息
- }); 
+ });
 
  //其他地方
  logger.log('warning', {
@@ -140,7 +140,7 @@ res.emit('log',{'stack':e,'errno':120,'msg' :'error happened!'},'warning');
    'msg' :'error happened!',  //错误消息
    'custom':{'key1' :'value1','key2':'value2'} //自定义消息
  });
- 
+
 ```
 `注意`custom字段默认只会在`warning`和`fatal`日志中展现
 
@@ -199,9 +199,3 @@ yog-log兼容ODP支持灵活的日志格式配置，以满足不同系统对日�
 ## 测试说明
 
 单元测试说明详见[此文档](./test/README.md)
-
-## 联系我们
-
-邮件组： oak@baidu.com
-联系人： zhangtao07@baidu.com、wangcheng@biadu.com
-

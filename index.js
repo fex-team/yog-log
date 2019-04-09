@@ -446,6 +446,7 @@ Logger.prototype = {
             catch (e) {
                 console.error(e);
                 //mail("生成日志模板js失败");
+                return false;
             }
         }
         return LOGGER_CACHE[format](this, util) + '\n';

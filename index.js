@@ -35,8 +35,10 @@ for (var num in LEVELS) {
 
 //debug模式下应用日志等级对应的颜色
 var COLORS = {
+    0: 'white',
     1: 'red',
     2: 'yellow',
+    3: 'magenta',
     4: 'grey',
     8: 'cyan',
     16: 'blue'
@@ -58,6 +60,7 @@ var Logger = function (opts, req) {
     };
 
     this.opts = this.extend({
+        'stdout_only': false,  // 只输出 stdout，不写文件
         'debug': 0,
         'intLevel': 16,
         'auto_rotate': 1,
@@ -388,11 +391,14 @@ Logger.prototype = {
             return false;
         }
 
-        //debug模式，console.log输出颜色标记的日志
-        if (this.opts['debug'] && COLORS[intLevel]) {
-            var color = COLORS[intLevel];
-            var _str = unescape(str);
-            console.log(_str[color]);
+        // stdout_only 主要是给容器化部署用的，开启后也写入控制台，但没颜色
+        if (this.opts['stdout_only']) {
+           console.log(str); 
+        // debug 模式，console.log输出颜色标记的日志
+        } else if (this.opts['debug'] && COLORS[intLevel]){
+           var color = COLORS[intLevel];
+           var _str = unescape(str);
+           console.log(_str[color]); 
         }
 
         if (!LOGFILE_CACHE[logFileType]) {
@@ -402,7 +408,7 @@ Logger.prototype = {
         // 获取此类文件的FD缓存
         var fdCache = LOGFILE_CACHE[logFileType];
 
-        if (!fdCache[logFile]) {
+        if (!fdCache[logFile] && !this.opts['stdout_only']) {
             // 关闭老的日志流
             for (var oldFile in fdCache) {
                 if (fdCache.hasOwnProperty(oldFile)) {
@@ -421,7 +427,9 @@ Logger.prototype = {
                 'flags': 'a'
             });
         }
-        fdCache[logFile].write(str);
+        if (!this.opts['stdout_only']) {
+            fdCache[logFile].write(str);
+        }
     },
 
 

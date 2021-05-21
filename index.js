@@ -40,7 +40,7 @@ var COLORS = {
     3: 'magenta',
     4: 'grey',
     8: 'cyan',
-    16: 'white'
+    16: 'grey'
 };
 
 var Logger = function (opts, req) {

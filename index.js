@@ -35,13 +35,12 @@ for (var num in LEVELS) {
 
 //debug模式下应用日志等级对应的颜色
 var COLORS = {
-    0: 'white',
     1: 'red',
     2: 'yellow',
     3: 'magenta',
     4: 'grey',
     8: 'cyan',
-    16: 'blue'
+    16: 'white'
 };
 
 var Logger = function (opts, req) {

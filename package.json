@@ -1,6 +1,6 @@
 {
   "name": "yog-log",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "yog logger",
   "main": "index.js",
   "scripts": {
@@ -11,10 +11,11 @@
     "url": "https://github.com/fex-team/yog-log.git"
   },
   "dependencies": {
-    "mkdirp": "0.5.0",
-    "stack-trace": "0.0.9",
+    "callsites": "^3.1.0",
+    "colors": "0.6.2",
     "fast-strftime": "1.1.1",
-    "colors": "0.6.2"
+    "mkdirp": "0.5.0",
+    "stack-trace": "0.0.9"
   },
   "keywords": [
     "fis",

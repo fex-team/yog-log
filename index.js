@@ -18,8 +18,7 @@ var LOGFILE_CACHE = {};
 
 //日志等级
 var LEVELS = {
-    // 不显示 access 日志
-    // 0: 'ACCESS',
+    0: 'ACCESS',
     3: 'ACCESS_ERROR',
     //应用日志等级 ODP格式
     1: 'FATAL',

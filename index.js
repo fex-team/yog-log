@@ -385,24 +385,8 @@ Logger.prototype = {
                 options['escape_msg'] === true ? escape(this.params['error_msg']) : unescape(this.params['error_msg']);
         }
 
-        if (this.opts['IS_JSON']) {
-            const caller = callsites()[3];
-            const callerFileName = caller.getFileName();
-            const callerFunctionName = caller.getFunctionName();
-            console.log(
-                JSON.stringify({
-                    level: this.params['current_level'],
-                    msg: options['msg'],
-                    file: callerFileName,
-                    function: callerFunctionName,
-                    uri: this.params['REQUEST_URI'] || ''
-                })
-            );
-            return;
-        }
-
         var format = log_format || this.format['DEFAULT'];
-        var str = this.getLogString(format);
+        var str = this.getLogString(format, options);
         if (!str) {
             return false;
         }
@@ -456,7 +440,22 @@ Logger.prototype = {
      * 获取日志字符串，,执行模板函数读取日志数据
      * @return {[type]} [description]
      */
-    getLogString: function (format) {
+    getLogString: function (format, options) {
+        if (this.opts['IS_JSON']) {
+            const caller = callsites()[3];
+            const callerFileName = caller.getFileName();
+            const callerFunctionName = caller.getFunctionName();
+            return (
+                JSON.stringify({
+                    level: this.params['current_level'],
+                    msg: options['msg'],
+                    file: callerFileName,
+                    function: callerFunctionName,
+                    uri: this.params['REQUEST_URI'] || ''
+                }) + '\n'
+            );
+        }
+
         if (!format) {
             return false;
         }

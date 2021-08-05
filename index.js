@@ -447,6 +447,7 @@ Logger.prototype = {
             const callerFunctionName = caller.getFunctionName();
             return (
                 JSON.stringify({
+                    date: new Date().toJSON(),
                     level: this.params['current_level'],
                     msg: options['msg'],
                     file: callerFileName,

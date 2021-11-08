@@ -700,8 +700,8 @@ module.exports = function (config) {
             res.removeListener('finish', logRequest);
             res.removeListener('close', logRequest);
             //以下参数需要在response finish的时候计算
-            logger.params['STATUS'] = res._header ? res.statusCode : null;
-            logger.params['CONTENT_LENGTH'] = (res._headers || {})['content-length'] || '-';
+            logger.params['STATUS'] = res.getHeader() ? res.statusCode : null;
+            logger.params['CONTENT_LENGTH'] = (res.getHeaders() || {})['content-length'] || '-';
             if (req._startAt) {
                 var diff = process.hrtime(req._startAt);
                 var ms = diff[0] * 1e3 + diff[1] * 1e-6;

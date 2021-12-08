@@ -7,7 +7,6 @@ var fs = require('fs'),
 const callsites = require('callsites');
 
 var util = require('./lib/util.js'),
-    stackTrace = require('stack-trace'),
     colors = require('colors'),
     mkdirp = require('mkdirp');
 
@@ -205,24 +204,6 @@ Logger.prototype = {
         this.params['FileName'] = '';
         this.params['LineNumber'] = '';
         this.params['isNative'] = '';
-        if (option['stack']) {
-            try {
-                if (!option['msg']) {
-                    this.params['error_msg'] = this.opts['debug']
-                        ? option['stack']
-                        : String(option['stack']).replace(/(\n)+|(\r\n)+/g, ' ');
-                }
-                var trace = stackTrace.parse(option['stack']);
-                this.params['TypeName'] = trace[0].typeName;
-                this.params['FunctionName'] = trace[0].functionName;
-                this.params['MethodName'] = trace[0].methodName;
-                this.params['FileName'] = trace[0].fileName;
-                this.params['LineNumber'] = trace[0].lineNumber;
-                this.params['isNative'] = trace[0].native;
-            } catch (e) {
-                //this.log('notice','wrong error obj');
-            }
-        }
     },
 
     //解析自定义字段，'custom'字段

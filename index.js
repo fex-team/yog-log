@@ -376,7 +376,7 @@ Logger.prototype = {
         if (this.opts['stdout_only']) {
             console.log(str);
             // debug 模式，console.log输出颜色标记的日志
-        } else if (this.opts['debug'] && COLORS[intLevel]) {
+        } else if (this.opts['debug'] && COLORS[intLevel] && process.env.NODE_ENV === 'dev') {
             var color = COLORS[intLevel];
             var _str = unescape(str);
             console.log(_str[color]);

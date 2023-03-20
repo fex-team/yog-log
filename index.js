@@ -6,9 +6,10 @@ var fs = require('fs'),
 
 const callsites = require('callsites');
 
+const {mkdirp} = require('mkdirp');
+
 var util = require('./lib/util.js'),
-    colors = require('colors'),
-    mkdirp = require('mkdirp');
+    colors = require('colors');
 
 var data_path = __dirname + '/'; //模板地址默认在模块里
 var log_path = __dirname + '/log';

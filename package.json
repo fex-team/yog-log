@@ -1,6 +1,6 @@
 {
     "name": "yog-log",
-    "version": "0.2.4",
+    "version": "0.2.5",
     "description": "yog logger",
     "main": "index.js",
     "scripts": {
@@ -14,7 +14,10 @@
         "callsites": "^3.1.0",
         "colors": "0.6.2",
         "fast-strftime": "1.1.1",
-        "mkdirp": "0.5.0"
+        "mkdirp": "2.1.5"
+    },
+     "devDependencies": {
+        "express": "4.17.1"
     },
     "keywords": [
         "fis",

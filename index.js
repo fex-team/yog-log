@@ -205,6 +205,18 @@ Logger.prototype = {
         this.params['FileName'] = '';
         this.params['LineNumber'] = '';
         this.params['isNative'] = '';
+        // 如果没有传msg，但是传了stack，则用stack信息替代msg
+        if (option['stack']) {
+            try {
+                if (!option['msg']) {
+                    this.params['error_msg'] = this.opts['debug']
+                        ? option['stack']
+                        : String(option['stack']).replace(/(\n)+|(\r\n)+/g, ' ');
+                }
+            } catch (e) {
+                //this.log('notice','wrong error obj');
+            }
+        }
     },
 
     //解析自定义字段，'custom'字段
